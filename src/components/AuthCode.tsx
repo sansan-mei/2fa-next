@@ -35,13 +35,17 @@ export function AuthCode({
 
   return (
     <>
-      <div className="relative p-4 bg-white rounded-lg shadow-sm border border-gray-200 animate-in slide-in-from-bottom-2 duration-300">
-        <div className="flex justify-between items-start mb-3">
-          <div>
-            <h3 className="font-medium text-gray-900">{issuer}</h3>
-            <p className="text-sm text-gray-500">{name}</p>
+      <div className="group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-200 md:hover:scale-[1.02]">
+        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none" />
+
+        <div className="relative flex justify-between items-start mb-3">
+          <div className="flex-1 min-w-0">
+            <h3 className="font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
+              {issuer}
+            </h3>
+            <p className="text-sm text-gray-500 truncate">{name}</p>
           </div>
-          <div className="relative">
+          <div className="relative ml-2">
             <button
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
               onClick={() => setShowMenu(!showMenu)}
@@ -66,29 +70,29 @@ export function AuthCode({
           </div>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="font-mono text-2xl tracking-wider select-all">
+        <div className="relative flex items-center justify-between">
+          <div className="font-mono text-2xl tracking-wider select-all group-hover:text-blue-700 transition-colors">
             {code}
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
               <div
-                className="w-6 h-6 rounded-full border-2 border-blue-500 transition-all duration-200 ease-linear"
+                className="w-6 h-6 rounded-full border-2 border-blue-500 transition-all duration-200 ease-linear group-hover:border-blue-600"
                 style={{
                   background: `conic-gradient(#3b82f6 ${timeRemaining}%, transparent ${timeRemaining}%)`,
                 }}
               />
             </div>
             <button
-              className="p-1 hover:bg-gray-100 rounded-full transition-colors relative group"
+              className="p-1 hover:bg-gray-100 rounded-full transition-all relative group/copy"
               onClick={handleCopy}
             >
               {copied ? (
                 <Check className="w-5 h-5 text-green-500 animate-in fade-in-0 duration-200" />
               ) : (
-                <Copy className="w-5 h-5 text-gray-500" />
+                <Copy className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
               )}
-              <span className="absolute -top-8 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+              <span className="absolute -top-8 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/copy:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                 {copied ? "Copied!" : "Copy code"}
               </span>
             </button>
@@ -100,8 +104,8 @@ export function AuthCode({
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={onDelete || (() => {})}
-        title={`是否删除 2FA Code`}
-        description={`确定要删除 ${issuer} (${name}) 的 Code 吗？此操作无法撤销。`}
+        title="Delete Authentication Code"
+        description={`Are you sure you want to delete the authentication code for ${issuer} (${name})? This action cannot be undone.`}
       />
     </>
   );
