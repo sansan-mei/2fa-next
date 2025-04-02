@@ -82,21 +82,23 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
       <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
         <div className="max-w-7xl mx-auto mt-1.5">
           {codes.length === 0 ? (
-            <div className="max-w-md mx-auto flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 rounded-lg animate-in fade-in duration-500">
-              <PlusCircle className="w-12 h-12 text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900">
-                No codes yet
-              </h3>
-              <p className="text-sm text-gray-500 text-center mt-1">
-                Add your first 2FA code by scanning a QR code or entering a
-                setup key
-              </p>
-              <button
-                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                onClick={() => setShowAddDialog(true)}
-              >
-                Add New Code
-              </button>
+            <div className="md:min-h-[calc(100vh-20rem)] flex items-center">
+              <div className="max-w-md mx-auto flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 rounded-lg animate-in fade-in duration-500">
+                <PlusCircle className="w-12 h-12 text-gray-400 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900">
+                  No codes yet
+                </h3>
+                <p className="text-sm text-gray-500 text-center mt-1">
+                  Add your first 2FA code by scanning a QR code or entering a
+                  setup key
+                </p>
+                <button
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                  onClick={() => setShowAddDialog(true)}
+                >
+                  Add New Code
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max">
