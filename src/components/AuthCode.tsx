@@ -72,7 +72,8 @@ export function AuthCode({
 
         <div className="relative flex items-center justify-between">
           <div className="font-mono text-2xl tracking-wider select-all group-hover:text-blue-700 transition-colors">
-            {code}
+            <span className="mr-1.5">{code.slice(0, 3)}</span>
+            <span>{code.slice(3)}</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">

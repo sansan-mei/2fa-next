@@ -1,7 +1,8 @@
 "use client";
 
+import { generateTOTPCode } from "@/utils/totp";
 import { PlusCircle } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
 import { AuthCode } from "./AuthCode";
 import { useTimeRemaining } from "./TimeProvider";
@@ -11,6 +12,7 @@ interface AuthItem {
   name: string;
   issuer: string;
   code: string;
+  sourceKey: string;
 }
 
 interface AuthContentProps {
@@ -26,16 +28,40 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
     setCodes((prev) => prev.filter((code) => code.id !== id));
   };
 
-  const handleAdd = ({ title, key }: { title: string; key: string }) => {
+  const handleAdd = async ({
+    title,
+    key,
+    description,
+  }: {
+    title: string;
+    key: string;
+    description: string;
+  }) => {
     // 这里应该使用 key 生成实际的 TOTP code，目前用模拟数据
-    const newCode: AuthItem = {
-      id: Date.now().toString(),
-      name: key,
-      issuer: title,
-      code: "000 000", // 这里应该是根据 key 生成的实际 code
-    };
+    const res = await fetch("http://localhost:3000/api/totp", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: description, // 用 description 作为 name
+        issuer: title, // 用 title 作为 issuer
+        code: key, // 用 key 作为 code
+      }),
+    });
+    const newCode = await res.json();
     setCodes((prev) => [...prev, newCode]);
   };
+
+  useEffect(() => {
+    if (timeRemaining === 0) {
+      const newCodes = codes.map((v) => {
+        v.code = generateTOTPCode(v.sourceKey);
+        return v;
+      });
+      setCodes(newCodes);
+    }
+  }, [timeRemaining]);
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
