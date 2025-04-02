@@ -1,19 +1,13 @@
 "use client";
 
+import { rsaEncrypt } from "@/utils/crypto";
+import { get, post } from "@/utils/request";
 import { generateTOTPCode } from "@/utils/totp";
 import { PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
 import { AuthCode } from "./AuthCode";
 import { useTimeRemaining } from "./TimeProvider";
-
-interface AuthItem {
-  id: string;
-  name: string;
-  issuer: string;
-  code: string;
-  sourceKey: string;
-}
 
 interface AuthContentProps {
   initialCodes: AuthItem[];
@@ -37,20 +31,23 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
     key: string;
     description: string;
   }) => {
-    // 这里应该使用 key 生成实际的 TOTP code，目前用模拟数据
-    const res = await fetch("http://localhost:3000/api/totp", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        name: description, // 用 description 作为 name
-        issuer: title, // 用 title 作为 issuer
-        code: key, // 用 key 作为 code
-      }),
+    // 请求rsa公钥回来
+    const { publicKey } = await get<{ publicKey: string }>({
+      url: "http://localhost:3000/api/crypto",
     });
-    const newCode = await res.json();
-    setCodes((prev) => [...prev, newCode]);
+
+    const encrypted = rsaEncrypt(key, publicKey);
+
+    const res = await post({
+      url: "http://localhost:3000/api/totp",
+      data: {
+        name: title,
+        issuer: description,
+        code: encrypted,
+      },
+    });
+    console.log(res);
+    debugger;
   };
 
   useEffect(() => {

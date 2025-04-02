@@ -1,8 +1,8 @@
-export async function getData(): Promise<AuthItem[]> {
-  const res = await fetch("http://127.0.0.1:3000/api/totp");
+import { get } from "./request";
 
-  if (!res.ok) {
-    throw new Error("Failed to fetch data");
-  }
-  return res.json();
+export async function getData() {
+  const res = await get<AuthItem[]>({
+    url: "http://127.0.0.1:3000/api/totp",
+  });
+  return res;
 }

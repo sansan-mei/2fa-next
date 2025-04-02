@@ -1,6 +1,7 @@
-import { generateTOTPCode } from "@/utils/totp";
+import { AuthItem, generateTOTPCode } from "@/server-utils/totp";
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
-import { randomUUID } from "node:crypto";
+import { rsaDecrypt } from "../crypto/route";
 
 const initialCodes: AuthItem[] = [];
 
@@ -10,12 +11,17 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const { name, issuer, code } = await req.json();
-  const result = {
+  const privateKey = process.env.RSA_PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error("RSA private key not found in environment variables");
+  }
+
+  const decryptedCode = rsaDecrypt(code, privateKey);
+  const result: AuthItem = {
     name,
     issuer,
-    code: generateTOTPCode(code),
+    code: generateTOTPCode(decryptedCode),
     id: randomUUID(),
-    sourceKey: code,
   };
   initialCodes.push(result);
   return NextResponse.json(result);
