@@ -1,4 +1,4 @@
-import { AuthItem, generateTOTPCode } from "@/server-utils/totp";
+import { generateTOTPCode } from "@/server-utils/totp";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { rsaDecrypt } from "../crypto/route";

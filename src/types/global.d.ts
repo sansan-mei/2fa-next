@@ -4,7 +4,6 @@ declare type AuthItem = {
   name: string;
   issuer: string;
   code: string;
-  sourceKey: string;
 };
 
 declare type AnyObject = Record<string, any>;
