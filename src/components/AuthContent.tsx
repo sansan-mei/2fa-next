@@ -1,6 +1,7 @@
 "use client";
 
 import { rsaEncrypt } from "@/utils/crypto";
+import { deleteSecret, getSecret, saveSecret } from "@/utils/idb";
 import { get, post } from "@/utils/request";
 import { generateTOTPCode } from "@/utils/totp";
 import { PlusCircle } from "lucide-react";
@@ -19,6 +20,7 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
   const timeRemaining = useTimeRemaining();
 
   const handleDelete = (id: string) => {
+    deleteSecret(id);
     setCodes((prev) => prev.filter((code) => code.id !== id));
   };
 
@@ -38,7 +40,7 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
 
     const encrypted = rsaEncrypt(key, publicKey);
 
-    const res = await post({
+    const res = await post<AuthItem>({
       url: "http://localhost:3000/api/totp",
       data: {
         name: title,
@@ -46,17 +48,22 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
         code: encrypted,
       },
     });
-    console.log(res);
-    debugger;
+
+    await saveSecret(res.id, key);
+    setCodes((prev) => [...prev, res]);
   };
 
   useEffect(() => {
     if (timeRemaining === 0) {
-      const newCodes = codes.map((v) => {
-        v.code = generateTOTPCode(v.sourceKey);
-        return v;
+      Promise.all(
+        codes.map(async (v) => {
+          const secret = await getSecret(v.id);
+          v.code = generateTOTPCode(secret);
+          return v;
+        })
+      ).then((res) => {
+        setCodes(res);
       });
-      setCodes(newCodes);
     }
   }, [timeRemaining]);
 

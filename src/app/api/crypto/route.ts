@@ -25,7 +25,6 @@ export function rsaDecrypt(ciphertext: string, privKey: string) {
 // 前端只需要公钥，用这个API获取
 export async function GET() {
   const publicKey = process.env.RSA_PUBLIC_KEY;
-  debugger;
   if (!publicKey) {
     throw new Error("RSA public key not found in environment variables");
   }
