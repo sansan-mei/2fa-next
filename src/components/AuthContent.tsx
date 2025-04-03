@@ -3,7 +3,7 @@
 import { rsaEncrypt } from "@/utils/crypto";
 import { deleteSecret, getSecret, saveSecret } from "@/utils/idb";
 import { get, post } from "@/utils/request";
-import { generateTOTPCode } from "@/utils/totp";
+import { generateTOTPCode, generateToTpCodeByList } from "@/utils/totp";
 import { PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
@@ -15,9 +15,14 @@ interface AuthContentProps {
 }
 
 export function AuthContent({ initialCodes }: AuthContentProps) {
-  const [codes, setCodes] = useState<AuthItem[]>(initialCodes);
+  const [codes, setCodes] = useState<AuthItem[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const timeRemaining = useTimeRemaining();
+
+  useEffect(() => {
+    // 初始化时获取codes
+    generateToTpCodeByList(initialCodes).then(setCodes);
+  }, []);
 
   const handleDelete = (id: string) => {
     deleteSecret(id);

@@ -1,9 +1,9 @@
-import { openDB } from "idb";
+import { IDBPDatabase, openDB } from "idb";
 
 const DB_NAME = "2fa-storage";
 const STORE_NAME = "secrets";
 
-let dbPromise: Promise<any> | null = null;
+let dbPromise: Promise<IDBPDatabase<unknown>> | null = null;
 
 // 只在浏览器环境初始化
 if (typeof window !== "undefined") {
@@ -30,4 +30,18 @@ export async function deleteSecret(id: string) {
   if (!dbPromise) return;
   const db = await dbPromise;
   await db.delete(STORE_NAME, id);
+}
+
+// 看下db里面有没有值
+export async function hasSecret() {
+  if (!dbPromise) return false;
+  const db = await dbPromise;
+  return (await db.count(STORE_NAME)) > 0;
+}
+
+// 获取所有secret
+export async function getAllSecrets() {
+  if (!dbPromise) return [];
+  const db = await dbPromise;
+  return await db.getAll(STORE_NAME);
 }
