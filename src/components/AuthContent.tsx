@@ -10,11 +10,7 @@ import { AddCodeDialog } from "./AddCodeDialog";
 import { AuthCode } from "./AuthCode";
 import { useTimeRemaining } from "./TimeProvider";
 
-interface AuthContentProps {
-  initialCodes: AuthItem[];
-}
-
-export function AuthContent({ initialCodes }: AuthContentProps) {
+export function AuthContent() {
   const [codes, setCodes] = useState<AuthItem[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const timeRemaining = useTimeRemaining();
@@ -59,11 +55,7 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
 
   useEffect(() => {
     // 初始化时获取codes
-    if (initialCodes.length > 0) {
-      setCodes(initialCodes);
-    } else {
-      generateToTpCodeByIDB().then(setCodes);
-    }
+    generateToTpCodeByIDB().then(setCodes);
   }, []);
 
   useEffect(() => {
