@@ -35,8 +35,11 @@ export function AuthCode({
 
   return (
     <>
-      <div className="group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-blue-200 md:hover:scale-[1.02]">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-lg pointer-events-none" />
+      <div
+        className="group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-500 ease-out hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-300"
+        onMouseLeave={() => setShowMenu(false)}
+      >
+        <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/30 to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out rounded-lg pointer-events-none" />
 
         <div className="relative flex justify-between items-start mb-3">
           <div className="flex-1 min-w-0">
@@ -55,20 +58,24 @@ export function AuthCode({
               <MoreVertical className="w-5 h-5 text-gray-500" />
             </button>
 
-            {showMenu && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 animate-in slide-in-from-top-2 duration-200 z-10">
-                <button
-                  onClick={() => {
-                    setShowMenu(false);
-                    setShowDeleteDialog(true);
-                  }}
-                  className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
-                >
-                  <Trash2 className="w-4 h-4" />
-                  Delete
-                </button>
-              </div>
-            )}
+            <div
+              className={`absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10 transition-all duration-200 ease-out ${
+                showMenu
+                  ? "transform-none opacity-100 visible"
+                  : "transform -translate-y-1 opacity-0 invisible"
+              }`}
+            >
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  setShowDeleteDialog(true);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+              >
+                <Trash2 className="w-4 h-4" />
+                Delete
+              </button>
+            </div>
           </div>
         </div>
 
@@ -78,7 +85,7 @@ export function AuthCode({
             <span>{code.slice(3)}</span>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center group-hover:scale-110 transition-transform">
+            <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center transition-transform duration-500 ease-out group-hover:scale-105">
               <div
                 className="w-6 h-6 rounded-full border-2 border-blue-500 transition-all duration-200 ease-linear group-hover:border-blue-600"
                 style={{
