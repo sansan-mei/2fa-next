@@ -1,7 +1,7 @@
+import { rsaDecrypt } from "@/server-utils/crypto";
 import { generateTOTPCode } from "@/server-utils/totp";
 import { NextResponse } from "next/server";
 import { Worker } from "snowflake-uuid";
-import { rsaDecrypt } from "../crypto/route";
 
 const initialCodes: AuthItem[] = [];
 

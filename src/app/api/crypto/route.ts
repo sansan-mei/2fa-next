@@ -1,26 +1,4 @@
-import NodeRSA from "node-rsa";
-
-// RSA加密 (使用公钥加密)
-export function rsaEncrypt(text: string, pubKey: string) {
-  const key = new NodeRSA(pubKey, "public");
-  // 设置加密配置
-  key.setOptions({
-    encryptionScheme: "pkcs1_oaep", // 使用更安全的 OAEP padding
-    environment: "browser",
-  });
-  return key.encrypt(text, "base64");
-}
-
-// RSA解密 (使用私钥解密)
-export function rsaDecrypt(ciphertext: string, privKey: string) {
-  const key = new NodeRSA(privKey, "private");
-  // 设置解密配置
-  key.setOptions({
-    encryptionScheme: "pkcs1_oaep", // 使用更安全的 OAEP padding
-    environment: "node",
-  });
-  return key.decrypt(ciphertext, "utf8");
-}
+import { rsaDecrypt } from "@/server-utils/crypto";
 
 // 前端只需要公钥，用这个API获取
 export async function GET() {
