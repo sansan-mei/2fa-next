@@ -6,7 +6,6 @@ import { useState } from "react";
 interface AddCodeDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  // eslint-disable-next-line no-unused-vars
   onAdd: (data: { title: string; description: string; key: string }) => void;
 }
 
