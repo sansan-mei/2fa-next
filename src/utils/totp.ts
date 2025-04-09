@@ -1,5 +1,5 @@
 import { TOTP } from "totp-generator";
-import { getSecret } from "./idb";
+import { getAllSecrets, getSecret } from "./idb";
 
 export function generateTOTPCode(key: string) {
   try {
@@ -11,17 +11,16 @@ export function generateTOTPCode(key: string) {
   }
 }
 
-export async function generateToTpCodeByList(list: AuthItem[]) {
-  return Promise.all(
-    list.map(async (item) => {
-      const sourceKey = await getSecret(item.id);
-      if (!sourceKey) {
-        return item;
-      }
-      return {
-        ...item,
-        code: generateTOTPCode(sourceKey),
-      };
-    })
-  );
+export async function generateToTpCodeByIDB(): Promise<AuthItem[]> {
+  const ids = await getAllSecrets();
+  const resultPromises = ids.map(async (id) => {
+    const value = await getSecret(id);
+    return {
+      id: id as string,
+      name: value!.title,
+      issuer: value!.description,
+      code: generateTOTPCode(value!.secret),
+    };
+  });
+  return Promise.all(resultPromises);
 }

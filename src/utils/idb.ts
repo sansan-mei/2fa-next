@@ -14,13 +14,15 @@ if (typeof window !== "undefined") {
   });
 }
 
-export async function saveSecret(id: string, secret: string) {
+export async function saveSecret(id: string, value: IDBValue) {
   if (!dbPromise) return;
   const db = await dbPromise;
-  await db.put(STORE_NAME, secret, id);
+  await db.put(STORE_NAME, value, id);
 }
 
-export async function getSecret(id: string) {
+export async function getSecret(
+  id: string | IDBValidKey
+): Promise<IDBValue | null> {
   if (!dbPromise) return null;
   const db = await dbPromise;
   return db.get(STORE_NAME, id);
@@ -43,5 +45,5 @@ export async function hasSecret() {
 export async function getAllSecrets() {
   if (!dbPromise) return [];
   const db = await dbPromise;
-  return await db.getAll(STORE_NAME);
+  return await db.getAllKeys(STORE_NAME);
 }

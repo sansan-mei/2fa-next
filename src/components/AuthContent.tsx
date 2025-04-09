@@ -3,7 +3,7 @@
 import { rsaEncrypt } from "@/utils/crypto";
 import { deleteSecret, getSecret, saveSecret } from "@/utils/idb";
 import { get, post } from "@/utils/request";
-import { generateTOTPCode, generateToTpCodeByList } from "@/utils/totp";
+import { generateTOTPCode, generateToTpCodeByIDB } from "@/utils/totp";
 import { PlusCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
@@ -18,11 +18,6 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
   const [codes, setCodes] = useState<AuthItem[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const timeRemaining = useTimeRemaining();
-
-  useEffect(() => {
-    // 初始化时获取codes
-    generateToTpCodeByList(initialCodes).then(setCodes);
-  }, []);
 
   const handleDelete = (id: string) => {
     deleteSecret(id);
@@ -54,19 +49,38 @@ export function AuthContent({ initialCodes }: AuthContentProps) {
       },
     });
 
-    await saveSecret(res.id, key);
+    await saveSecret(res.id, {
+      secret: key,
+      title,
+      description,
+    });
     setCodes((prev) => [...prev, res]);
   };
 
   useEffect(() => {
-    if (timeRemaining === 0) {
+    // 初始化时获取codes
+    if (initialCodes.length > 0) {
+      setCodes(initialCodes);
+    } else {
+      generateToTpCodeByIDB().then(setCodes);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (timeRemaining === 30) {
       Promise.all(
         codes.map(async (v) => {
-          const secret = await getSecret(v.id);
-          v.code = generateTOTPCode(secret);
+          const value = await getSecret(v.id);
+          if (!value) {
+            return v;
+          }
+          v.code = generateTOTPCode(value.secret);
           return v;
         })
       ).then((res) => {
+        if (res.length === 0) {
+          return;
+        }
         setCodes(res);
       });
     }

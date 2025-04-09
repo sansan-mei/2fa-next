@@ -41,9 +41,9 @@ export function AuthCode({
         <div className="relative flex justify-between items-start mb-3">
           <div className="flex-1 min-w-0">
             <h3 className="font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
-              {issuer}
+              {name}
             </h3>
-            <p className="text-sm text-gray-500 truncate">{name}</p>
+            <p className="text-sm text-gray-500 truncate">{issuer}</p>
           </div>
           <div className="relative ml-2">
             <button
