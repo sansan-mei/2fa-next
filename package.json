@@ -13,6 +13,7 @@
     "jsqr": "^1.4.0",
     "lucide-react": "^0.485.0",
     "next": "15.2.4",
+    "next-pwa": "^5.6.0",
     "node-rsa": "^1.1.1",
     "otpauth": "^9.4.0",
     "qrcode": "^1.5.4",
