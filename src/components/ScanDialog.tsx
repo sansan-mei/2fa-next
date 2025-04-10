@@ -229,22 +229,22 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
                 <div className="w-full mb-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div
-                      className="bg-gray-100 p-6 rounded-lg text-center cursor-pointer hover:bg-gray-200 transition-colors"
+                      className="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200 transition-colors"
                       onClick={startVideoScan}
                     >
                       <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <h4 className="text-base font-medium text-gray-900 mb-2">
+                      <h4 className="text-sm md:text-base font-medium text-gray-900 mb-2">
                         使用摄像头
                       </h4>
                       <p className="text-sm text-gray-500">实时扫描二维码</p>
                     </div>
 
                     <div
-                      className="bg-gray-100 p-6 rounded-lg text-center cursor-pointer hover:bg-gray-200 transition-colors"
+                      className="bg-gray-100 p-4 rounded-lg text-center cursor-pointer hover:bg-gray-200 transition-colors"
                       onClick={triggerFileInput}
                     >
                       <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                      <h4 className="text-base font-medium text-gray-900 mb-2">
+                      <h4 className="text-sm md:text-base font-medium text-gray-900 mb-2">
                         上传图片
                       </h4>
                       <p className="text-sm text-gray-500">从图片中识别</p>

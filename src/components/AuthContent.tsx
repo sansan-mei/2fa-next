@@ -351,10 +351,10 @@ export function AuthContent() {
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="fixed top-0 left-0 right-0 bg-gray-50 z-10 px-4 py-4 border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-2xl font-bold text-gray-900">
-            2FA Authenticator
+          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
+            TOTP 验证器
           </h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             {codes.length > 0 && (
               <button
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
