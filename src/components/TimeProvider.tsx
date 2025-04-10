@@ -1,5 +1,6 @@
 "use client";
 
+import { getTimeRemainingToNextCycle } from "@/utils/time";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const TimeContext = createContext<number>(0);
@@ -12,11 +13,9 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
   const [timeRemaining, setTimeRemaining] = useState(0);
 
   useEffect(() => {
-    // 计算当前时间到下一个 30 秒整点的剩余时间
+    // 使用utils中的函数计算当前时间到下一个30秒整点的剩余时间
     const updateTimeRemaining = () => {
-      const now = new Date();
-      const seconds = now.getSeconds();
-      const remaining = 30 - (seconds % 30);
+      const remaining = getTimeRemainingToNextCycle();
       setTimeRemaining(remaining);
     };
 

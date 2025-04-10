@@ -1,5 +1,6 @@
 "use client";
 
+import { copyToClipboard } from "@/utils/clipboard";
 import { Check, Copy, MoreVertical, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -24,12 +25,10 @@ export function AuthCode({
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
-    try {
-      await navigator.clipboard.writeText(code.replace(/\s/g, ""));
+    const success = await copyToClipboard(code.replace(/\s/g, ""));
+    if (success) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error("Failed to copy:", err);
     }
   };
 

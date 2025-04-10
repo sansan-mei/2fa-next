@@ -1,5 +1,6 @@
 "use client";
 
+import { formatTOTPKey, validateTOTPKey } from "@/utils/validators";
 import { X } from "lucide-react";
 import { useState } from "react";
 
@@ -17,36 +18,26 @@ export function AddCodeDialog({ isOpen, onClose, onAdd }: AddCodeDialogProps) {
 
   if (!isOpen) return null;
 
-  const validateKey = (value: string) => {
-    // 移除空格
-    const cleanKey = value.replace(/\s/g, "").toUpperCase();
-
-    // Base32 字符集验证（A-Z 和 2-7）
-    if (!/^[A-Z2-7]*$/.test(cleanKey)) {
-      setKeyError("密钥只能包含字母 A-Z 和数字 2-7");
-      return false;
-    }
-
-    // 长度验证（通常是 16、32 或 64 个字符）
-    if (cleanKey.length > 0 && ![16, 32, 64].includes(cleanKey.length)) {
-      setKeyError("密钥长度必须是 16、32 或 64 个字符");
-      return false;
-    }
-
-    setKeyError("");
-    return true;
-  };
-
   const handleKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toUpperCase();
     setKey(value);
-    validateKey(value);
+
+    const validation = validateTOTPKey(value);
+    setKeyError(validation.error);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (title && key && validateKey(key)) {
-      onAdd({ title, description, key: key.replace(/\s/g, "").toUpperCase() });
+
+    const validation = validateTOTPKey(key);
+
+    if (title && key && validation.isValid) {
+      onAdd({
+        title,
+        description,
+        key: formatTOTPKey(key),
+      });
+
       setTitle("");
       setDescription("");
       setKey("");

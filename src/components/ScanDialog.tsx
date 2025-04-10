@@ -1,6 +1,6 @@
 "use client";
 
-import jsQR from "jsqr";
+import { scanQRCode, scanQRCodeFromImage } from "@/utils/qr";
 import { Camera, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
@@ -28,46 +28,17 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
     setError(null);
 
     try {
-      // 处理图片并扫描二维码
-      await scanQRFromImage(file);
+      // 使用工具函数处理图片并扫描二维码
+      const qrData = await scanQRCodeFromImage(file);
+
+      if (qrData) {
+        onScan(qrData);
+      } else {
+        setError("未能在图片中检测到有效的二维码");
+      }
     } catch (err) {
       console.error("QR扫描错误:", err);
       setError("扫描二维码时出错，请尝试其他图片");
-    }
-  };
-
-  // 使用jsQR库扫描二维码
-  const scanQRFromImage = async (file: File) => {
-    // 创建图像对象
-    const imgBitmap = await createImageBitmap(file);
-
-    // 使用jsQR库进行扫描
-    await processWithJsQR(imgBitmap);
-  };
-
-  // 使用jsQR库进行扫描
-  const processWithJsQR = async (imgBitmap: ImageBitmap) => {
-    if (!canvasRef.current) return;
-
-    const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
-    if (!context) return;
-
-    // 设置canvas尺寸并绘制图像
-    canvas.width = imgBitmap.width;
-    canvas.height = imgBitmap.height;
-    context.drawImage(imgBitmap, 0, 0, imgBitmap.width, imgBitmap.height);
-
-    // 从canvas获取图像数据
-    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
-    const code = jsQR(imageData.data, imageData.width, imageData.height, {
-      inversionAttempts: "dontInvert",
-    });
-
-    if (code) {
-      onScan(code.data);
-    } else {
-      setError("未能在图片中检测到有效的二维码");
     }
   };
 
@@ -140,15 +111,13 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
           canvas.height
         );
 
-        // 使用jsQR库进行扫描
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "dontInvert",
-        });
+        // 使用工具函数扫描QR码
+        const qrData = scanQRCode(imageData);
 
-        if (code) {
+        if (qrData) {
           // 找到二维码
           stopVideoScan();
-          onScan(code.data);
+          onScan(qrData);
           return;
         }
       }
@@ -253,25 +222,26 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
                 </div>
 
                 {error && (
-                  <div className="text-red-500 text-sm mb-4 max-w-sm text-center">
+                  <div className="bg-red-50 border border-red-200 text-red-600 rounded-md p-3 mb-4 w-full text-sm">
                     {error}
                   </div>
                 )}
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept="image/*"
+                  className="hidden"
+                />
               </div>
             )}
-
-            {/* 隐藏元素 */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-            <canvas ref={canvasRef} className="hidden" />
           </div>
         </div>
       </div>
+
+      {/* 隐藏的canvas用于处理视频帧 */}
+      <canvas ref={canvasRef} className="hidden" />
     </div>
   );
 }

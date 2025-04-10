@@ -2,15 +2,20 @@
 
 import { rsaEncrypt } from "@/utils/crypto";
 import {
+  generateExportQRCode,
+  importData,
+  parseBase64Data,
+} from "@/utils/export";
+import {
   deleteSecret,
   getAllSecrets,
   getSecret,
   saveSecret,
 } from "@/utils/idb";
+import { parseTOTPQRCode } from "@/utils/qr";
 import { get, post } from "@/utils/request";
 import { generateTOTPCode, generateToTpCodeByIDB } from "@/utils/totp";
 import { Download, PlusCircle, QrCode, ScanLine } from "lucide-react";
-import QRCode from "qrcode";
 import { useEffect, useRef, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
 import { AuthCode } from "./AuthCode";
@@ -98,93 +103,26 @@ export function AuthContent() {
       // 首先检查是否为有效的URL格式
       if (result.startsWith("otpauth://")) {
         // 处理标准TOTP二维码
-        const url = new URL(result);
+        const parsed = parseTOTPQRCode(result);
 
-        if (url.protocol !== "otpauth:") {
-          console.error("Invalid protocol, expected otpauth:");
-          alert("二维码格式错误：协议不是otpauth");
+        if (!parsed) {
+          alert("二维码格式错误或缺少必要信息");
           return;
-        }
-
-        // 解析URL中的参数
-        const params = new URLSearchParams(url.search);
-        const secret = params.get("secret");
-
-        if (!secret) {
-          console.error("No secret found in QR code");
-          alert("二维码中没有找到密钥信息");
-          return;
-        }
-
-        // 解析账户信息 (otpauth://totp/issuer:account?secret=xxx&issuer=xxx)
-        const path = url.pathname.substring(1); // 移除开头的斜杠
-        let issuer = params.get("issuer") || "";
-        let account = path;
-
-        // 如果路径包含 issuer:account 格式
-        if (path.includes(":")) {
-          const parts = path.split(":");
-          if (!issuer) issuer = parts[0];
-          account = parts[1];
         }
 
         // 添加到认证列表
         await handleAdd({
-          title: account,
-          key: secret,
-          description: issuer,
+          title: parsed.account,
+          key: parsed.secret,
+          description: parsed.issuer,
         });
 
         alert("成功添加新的2FA认证码");
       } else {
         // 尝试解析为备份数据(Base64编码的JSON)
         try {
-          // 更健壮的Base64解码方法
-          let jsonString;
-          try {
-            // 首先尝试标准的Base64解码方法
-            jsonString = decodeURIComponent(escape(atob(result)));
-          } catch (decodeError) {
-            console.error("Standard Base64 decode failed:", decodeError);
-
-            // 尝试替代方法
-            try {
-              // 尝试直接解码
-              jsonString = atob(result);
-            } catch {
-              // 如果还是失败，尝试修复Base64字符串
-              const fixedBase64 = result.replace(/-/g, "+").replace(/_/g, "/");
-              try {
-                jsonString = atob(fixedBase64);
-              } catch {
-                alert("无法解码Base64数据，请确保扫描了正确的备份二维码");
-                throw new Error(
-                  "无法解码Base64数据，请确保扫描了正确的备份二维码"
-                );
-              }
-            }
-          }
-
-          console.log("解码后的JSON:", jsonString.substring(0, 100) + "..."); // 调试信息
-
-          // 解析JSON
-          let backupData;
-          try {
-            backupData = JSON.parse(jsonString) as ExportDataItem[];
-          } catch (jsonError) {
-            console.error(
-              "JSON parse error:",
-              jsonError,
-              "Raw data:",
-              jsonString
-            );
-            throw new Error("无法解析JSON数据");
-          }
-
-          if (!Array.isArray(backupData)) {
-            console.error("Not an array:", typeof backupData);
-            throw new Error("无效的备份数据格式，不是数组");
-          }
+          // 解析备份数据
+          const backupData = parseBase64Data(result);
 
           // 检查数据格式
           if (
@@ -201,19 +139,7 @@ export function AuthContent() {
             window.confirm(`找到${backupData.length}个2FA认证码，是否导入？`)
           ) {
             // 导入所有备份数据
-            let importedCount = 0;
-            for (const item of backupData) {
-              try {
-                await saveSecret(item.id, {
-                  secret: item.secret,
-                  title: item.title,
-                  description: item.description,
-                });
-                importedCount++;
-              } catch (saveError) {
-                console.error("Error saving item:", saveError, "Item:", item);
-              }
-            }
+            const importedCount = await importData(backupData);
 
             // 重新加载认证码
             const updatedCodes = await generateToTpCodeByIDB();
@@ -248,15 +174,14 @@ export function AuthContent() {
       const ids = await getAllSecrets();
 
       if (ids.length === 0) {
-        console.error("No data to export");
+        alert("你还没有添加任何2FA认证码");
         return;
       }
 
-      // 获取所有保存的密钥和数据
+      // 收集所有数据
       const exportData: ExportDataItem[] = [];
-
       for (const id of ids) {
-        const value = await getSecret(id as string);
+        const value = await getSecret(id);
         if (value) {
           exportData.push({
             id: id as string,
@@ -267,21 +192,13 @@ export function AuthContent() {
         }
       }
 
-      // 将数据转为JSON并Base64编码以防止特殊字符问题
-      const jsonData = JSON.stringify(exportData);
-      const base64Data = btoa(unescape(encodeURIComponent(jsonData)));
-
-      // 生成二维码
-      const dataUrl = await QRCode.toDataURL(base64Data, {
-        errorCorrectionLevel: "L",
-        width: 400,
-        margin: 2,
-      });
-
+      // 生成QR码
+      const dataUrl = await generateExportQRCode(exportData);
       setExportDataUrl(dataUrl);
       setShowExportQRCode(true);
-    } catch (error) {
-      console.error("Failed to export data as QR code:", error);
+    } catch (err) {
+      console.error("导出数据失败:", err);
+      alert("导出失败，请重试");
     }
   };
 
