@@ -1,32 +1,8 @@
 "use client";
 
-import { Upload, X } from "lucide-react";
-import { useRef, useState } from "react";
-
-// 为BarcodeDetector定义接口
-interface BarcodeDetectorOptions {
-  formats: string[];
-}
-
-interface BarcodeResult {
-  rawValue: string;
-  format: string;
-  boundingBox?: DOMRectReadOnly;
-  cornerPoints?: Array<{ x: number; y: number }>;
-}
-
-interface BarcodeDetectorInterface {
-  detect: (image: ImageBitmap) => Promise<BarcodeResult[]>;
-}
-
-// 扩展Window接口以包含BarcodeDetector
-declare global {
-  interface Window {
-    BarcodeDetector?: {
-      new (options?: BarcodeDetectorOptions): BarcodeDetectorInterface;
-    };
-  }
-}
+import jsQR from "jsqr";
+import { Camera, Upload, X } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 
 interface ScanDialogProps {
   isOpen: boolean;
@@ -36,12 +12,13 @@ interface ScanDialogProps {
 
 export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
   const [error, setError] = useState<string | null>(null);
+  const [isScanning, setIsScanning] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  // 检查BarcodeDetector是否可用
-  const isBarcodeDetectorSupported =
-    typeof window !== "undefined" && "BarcodeDetector" in window;
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const animationRef = useRef<number | null>(null);
 
   // 处理文件上传
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,42 +36,17 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
     }
   };
 
-  // 使用原生扫码API或回退到jsQR库
+  // 使用jsQR库扫描二维码
   const scanQRFromImage = async (file: File) => {
     // 创建图像对象
     const imgBitmap = await createImageBitmap(file);
 
-    if (isBarcodeDetectorSupported && window.BarcodeDetector) {
-      try {
-        // 使用原生BarcodeDetector API
-        const barcodeDetector = new window.BarcodeDetector({
-          formats: ["qr_code"],
-        });
-
-        const barcodes = await barcodeDetector.detect(imgBitmap);
-
-        if (barcodes.length > 0) {
-          // 找到二维码
-          onScan(barcodes[0].rawValue);
-        } else {
-          setError("未能在图片中检测到有效的二维码");
-        }
-      } catch (error) {
-        console.error("BarcodeDetector错误:", error);
-        // 如果原生API失败，回退到使用jsQR库
-        await fallbackToJsQR(imgBitmap);
-      }
-    } else {
-      // 如果原生API不可用，回退到使用jsQR库
-      await fallbackToJsQR(imgBitmap);
-    }
+    // 使用jsQR库进行扫描
+    await processWithJsQR(imgBitmap);
   };
 
-  // 回退到jsQR库进行扫描
-  const fallbackToJsQR = async (imgBitmap: ImageBitmap) => {
-    // 动态导入jsQR库
-    const jsQR = (await import("jsqr")).default;
-
+  // 使用jsQR库进行扫描
+  const processWithJsQR = async (imgBitmap: ImageBitmap) => {
     if (!canvasRef.current) return;
 
     const canvas = canvasRef.current;
@@ -118,6 +70,114 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
       setError("未能在图片中检测到有效的二维码");
     }
   };
+
+  // 启动摄像头扫描
+  const startVideoScan = async () => {
+    try {
+      setError(null);
+      setIsScanning(true);
+
+      // 请求摄像头权限，优先使用后置摄像头
+      const mediaStream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      });
+
+      setStream(mediaStream);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = mediaStream;
+        videoRef.current.play();
+      }
+
+      // 开始扫描循环
+      startScanningLoop();
+    } catch (err) {
+      console.error("摄像头访问错误:", err);
+      setError("无法访问摄像头，请检查权限设置或尝试上传图片");
+      setIsScanning(false);
+    }
+  };
+
+  // 停止摄像头扫描
+  const stopVideoScan = () => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+      setStream(null);
+    }
+
+    setIsScanning(false);
+  };
+
+  // 扫描循环
+  const startScanningLoop = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext("2d");
+
+    if (!context) return;
+
+    const scanFrame = () => {
+      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+        // 设置canvas尺寸
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+
+        // 在canvas上绘制视频帧
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        // 获取图像数据
+        const imageData = context.getImageData(
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+
+        // 使用jsQR库进行扫描
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+          // 找到二维码
+          stopVideoScan();
+          onScan(code.data);
+          return;
+        }
+      }
+
+      // 继续扫描循环
+      animationRef.current = requestAnimationFrame(scanFrame);
+    };
+
+    animationRef.current = requestAnimationFrame(scanFrame);
+  };
+
+  // 在对话框关闭或组件卸载时清理资源
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [stream]);
+
+  useEffect(() => {
+    if (!isOpen && isScanning) {
+      stopVideoScan();
+    }
+  }, [isOpen, isScanning]);
 
   // 触发文件选择器
   const triggerFileInput = () => {
@@ -146,43 +206,69 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
               </button>
             </div>
 
-            <div className="flex flex-col items-center">
-              <div className="w-full max-w-sm mb-4">
-                <div className="bg-gray-100 p-6 rounded-lg text-center">
-                  <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-base font-medium text-gray-900 mb-2">
-                    上传二维码图片
-                  </h4>
-                  <p className="text-sm text-gray-500 mb-4">
-                    请上传包含二维码的图片进行识别
-                  </p>
-
-                  <button
-                    onClick={triggerFileInput}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto"
-                  >
-                    <Upload className="w-4 h-4" />
-                    选择图片
-                  </button>
+            {isScanning ? (
+              <div className="flex flex-col items-center">
+                <div className="relative w-full mb-4 bg-black rounded-lg overflow-hidden">
+                  <video
+                    ref={videoRef}
+                    className="w-full h-64 object-cover"
+                    playsInline
+                    muted
+                  />
+                  <div className="absolute inset-0 border-2 border-blue-500 border-opacity-50 pointer-events-none" />
                 </div>
+                <button
+                  onClick={stopVideoScan}
+                  className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
+                  停止扫描
+                </button>
               </div>
+            ) : (
+              <div className="flex flex-col items-center">
+                <div className="w-full mb-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div
+                      className="bg-gray-100 p-6 rounded-lg text-center cursor-pointer hover:bg-gray-200 transition-colors"
+                      onClick={startVideoScan}
+                    >
+                      <Camera className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-base font-medium text-gray-900 mb-2">
+                        使用摄像头
+                      </h4>
+                      <p className="text-sm text-gray-500">实时扫描二维码</p>
+                    </div>
 
-              {error && (
-                <div className="text-red-500 text-sm mb-4 max-w-sm text-center">
-                  {error}
+                    <div
+                      className="bg-gray-100 p-6 rounded-lg text-center cursor-pointer hover:bg-gray-200 transition-colors"
+                      onClick={triggerFileInput}
+                    >
+                      <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                      <h4 className="text-base font-medium text-gray-900 mb-2">
+                        上传图片
+                      </h4>
+                      <p className="text-sm text-gray-500">从图片中识别</p>
+                    </div>
+                  </div>
                 </div>
-              )}
 
-              {/* 隐藏元素 */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-              <canvas ref={canvasRef} className="hidden" />
-            </div>
+                {error && (
+                  <div className="text-red-500 text-sm mb-4 max-w-sm text-center">
+                    {error}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 隐藏元素 */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+            <canvas ref={canvasRef} className="hidden" />
           </div>
         </div>
       </div>
