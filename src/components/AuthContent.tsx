@@ -15,7 +15,7 @@ import {
 import { parseTOTPQRCode } from "@/utils/qr";
 import { get, post } from "@/utils/request";
 import { generateTOTPCode, generateToTpCodeByIDB } from "@/utils/totp";
-import { Download, PlusCircle, QrCode, ScanLine } from "lucide-react";
+import { Download, Loader2, PlusCircle, QrCode, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
 import { AuthCode } from "./AuthCode";
@@ -31,6 +31,7 @@ interface ExportDataItem {
 
 export function AuthContent() {
   const [codes, setCodes] = useState<AuthItem[]>([]);
+  const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showScanDialog, setShowScanDialog] = useState(false);
   const [showAddDropdown, setShowAddDropdown] = useState(false);
@@ -209,7 +210,10 @@ export function AuthContent() {
 
   useEffect(() => {
     // 初始化时获取codes
-    generateToTpCodeByIDB().then(setCodes);
+    setLoading(true);
+    generateToTpCodeByIDB()
+      .then(setCodes)
+      .finally(() => setLoading(false));
 
     // 加载所有密钥
     const loadSecrets = async () => {
@@ -319,7 +323,13 @@ export function AuthContent() {
 
       <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
         <div className="max-w-7xl mx-auto mt-1.5">
-          {codes.length === 0 ? (
+          {loading ? (
+            <div className="h-[calc(100vh-150px)] flex items-center justify-center">
+              <div className="flex flex-col items-center gap-2">
+                <Loader2 className="w-12 h-12 text-gray-900 animate-spin" />
+              </div>
+            </div>
+          ) : codes.length === 0 ? (
             <div className="md:min-h-[calc(100vh-20rem)] flex items-center">
               <div className="max-w-md mx-auto flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 rounded-lg animate-in fade-in duration-500">
                 <PlusCircle className="w-12 h-12 text-gray-400 mb-4" />
