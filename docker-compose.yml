@@ -1,0 +1,10 @@
+services:
+  2fa-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3009:3009"
+    restart: always
+    volumes:
+      - .env:/app/.env
