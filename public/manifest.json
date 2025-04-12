@@ -3,25 +3,31 @@
   "short_name": "2FA",
   "icons": [
     {
-      "src": "/icons/android-chrome-192x192.png",
-      "sizes": "192x192",
+      "src": "/icons/icon-500x500.png",
+      "sizes": "500x500",
       "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icons/android-chrome-384x384.png",
-      "sizes": "384x384",
-      "type": "image/png"
-    },
-    {
-      "src": "/icons/icon-512x512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "purpose": "any"
     }
   ],
-  "theme_color": "#FFFFFF",
   "background_color": "#FFFFFF",
-  "start_url": "/",
+  "start_url": "/?source=pwa",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "portrait",
+  "scope": "/",
+  "description": "Two-Factor Authentication PWA",
+  "categories": ["security", "authentication"],
+  "screenshots": [
+    {
+      "src": "/icons/icon-500x500.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "form_factor": "wide"
+    },
+    {
+      "src": "/icons/icon-500x500.png",
+      "sizes": "500x500",
+      "type": "image/png",
+      "form_factor": "narrow"
+    }
+  ]
 }
