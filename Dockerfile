@@ -1,12 +1,13 @@
 FROM oven/bun:canary-alpine AS base
 
-# 安装依赖阶段
+# 依赖安装阶段
 FROM base AS deps
 WORKDIR /app
-COPY . .
-RUN bun install
+COPY package.json bun.lock ./
+RUN apk add --no-cache libc6-compat && \
+    bun install
 
-# 打包阶段
+# 构建阶段
 FROM base AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
@@ -17,14 +18,15 @@ RUN bun run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
 
-# 只复制必要的文件
-COPY --from=builder /app/.next ./next
+RUN addgroup --system --gid 1001 appgroup && \
+    adduser --system --uid 1001 appuser
+
+COPY --from=builder --chown=appuser:appgroup /app/.next/standalone ./
+COPY --from=builder --chown=appuser:appgroup /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-# 删除cache文件夹，如果有
-RUN rm -rf ./next/cache
 
+USER appuser
 EXPOSE 3000
-
-CMD ["bun", "./.next/standalone/server.js"] 
+CMD ["bun", "server.js"]

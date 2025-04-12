@@ -4,7 +4,7 @@ services:
       context: .
       dockerfile: Dockerfile
     ports:
-      - "3009:3009"
+      - "3000:3000"
     restart: always
     volumes:
       - .env:/app/.env
