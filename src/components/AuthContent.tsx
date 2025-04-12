@@ -74,13 +74,13 @@ export function AuthContent() {
   }) => {
     // 请求rsa公钥回来
     const { publicKey } = await get<{ publicKey: string }>({
-      url: "http://localhost:3000/api/crypto",
+      url: "api/crypto",
     });
 
     const encrypted = rsaEncrypt(key, publicKey);
 
     const res = await post<AuthItem>({
-      url: "http://localhost:3000/api/totp",
+      url: "api/totp",
       data: {
         name: title,
         issuer: description,
