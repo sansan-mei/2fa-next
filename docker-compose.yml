@@ -1,5 +1,6 @@
 services:
   2fa-app:
+    image: 1596944197/2fa-app
     build:
       context: .
       dockerfile: Dockerfile
