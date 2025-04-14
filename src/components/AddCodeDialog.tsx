@@ -52,7 +52,7 @@ export function AddCodeDialog({ isOpen, onClose, onAdd }: AddCodeDialogProps) {
       <div className="relative bg-white rounded-lg p-6 w-[90%] max-w-md animate-in zoom-in-95 duration-200">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900">
-            添加新的 2FA Code
+            添加新的 TOTP 密钥
           </h3>
           <button
             onClick={onClose}
@@ -112,7 +112,7 @@ export function AddCodeDialog({ isOpen, onClose, onAdd }: AddCodeDialogProps) {
               className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
                 keyError ? "border-red-500" : "border-gray-300"
               }`}
-              placeholder="输入 2FA 密钥（仅支持 A-Z 和 2-7）"
+              placeholder="输入 TOTP 密钥（仅支持 A-Z 和 2-7）"
               required
             />
             {keyError && (

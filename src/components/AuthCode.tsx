@@ -58,7 +58,7 @@ export function AuthCode({
             </button>
 
             <div
-              className={`absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10 transition-all duration-200 ease-out ${
+              className={`absolute right-0 mt-1 w-24 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10 transition-all duration-200 ease-out ${
                 showMenu
                   ? "transform-none opacity-100 visible"
                   : "transform -translate-y-1 opacity-0 invisible"
@@ -72,7 +72,7 @@ export function AuthCode({
                 className="w-full px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
               >
                 <Trash2 className="w-4 h-4" />
-                Delete
+                删除
               </button>
             </div>
           </div>
@@ -102,7 +102,7 @@ export function AuthCode({
                 <Copy className="w-5 h-5 text-gray-500 group-hover:text-blue-600 transition-colors" />
               )}
               <span className="absolute -top-8 right-0 bg-gray-900 text-white text-xs px-2 py-1 rounded opacity-0 group-hover/copy:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                {copied ? "Copied!" : "Copy code"}
+                {copied ? "已复制" : "复制代码"}
               </span>
             </button>
           </div>
@@ -113,8 +113,8 @@ export function AuthCode({
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={onDelete || (() => {})}
-        title="Delete Authentication Code"
-        description={`Are you sure you want to delete the authentication code for ${issuer} (${name})? This action cannot be undone.`}
+        title="删除认证代码"
+        description={`确定要删除 ${issuer} (${name}) 的认证代码吗？此操作无法撤销。`}
       />
     </>
   );

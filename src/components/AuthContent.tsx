@@ -334,11 +334,10 @@ export function AuthContent() {
               <div className="max-w-md mx-auto flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 rounded-lg animate-in fade-in duration-500">
                 <PlusCircle className="w-12 h-12 text-gray-400 mb-4" />
                 <h3 className="text-lg font-medium text-gray-900">
-                  No codes yet
+                  还没有认证码
                 </h3>
                 <p className="text-sm text-gray-500 text-center mt-1">
-                  Add your first 2FA code by scanning a QR code or entering a
-                  setup key
+                  通过扫描二维码或输入密钥添加你的第一个2FA认证码
                 </p>
                 <div className="mt-4 flex flex-col sm:flex-row gap-2">
                   <button
