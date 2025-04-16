@@ -1,5 +1,6 @@
 "use client";
 
+import { getPublicKey, postToTp } from "@/utils/api";
 import { rsaEncrypt } from "@/utils/crypto";
 import {
   generateExportQRCode,
@@ -13,7 +14,6 @@ import {
   saveSecret,
 } from "@/utils/idb";
 import { parseTOTPQRCode } from "@/utils/qr";
-import { get, post } from "@/utils/request";
 import { generateTOTPCode, generateToTpCodeByIDB } from "@/utils/totp";
 import { Download, Loader2, PlusCircle, QrCode, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -73,19 +73,14 @@ export function AuthContent() {
     description: string;
   }) => {
     // 请求rsa公钥回来
-    const { publicKey } = await get<{ publicKey: string }>({
-      url: "api/crypto",
-    });
+    const { publicKey } = await getPublicKey();
 
     const encrypted = rsaEncrypt(key, publicKey);
 
-    const res = await post<AuthItem>({
-      url: "api/totp",
-      data: {
-        name: title,
-        issuer: description,
-        code: encrypted,
-      },
+    const res = await postToTp({
+      name: title,
+      issuer: description,
+      code: encrypted,
     });
 
     await saveSecret(res.id, {
