@@ -263,6 +263,23 @@ export function AuthContent() {
     document.body.removeChild(link);
   };
 
+  const handleEdit = async (id: string, newName: string, newIssuer: string) => {
+    const lastCode = await getSecret(id);
+    if (!lastCode) {
+      return;
+    }
+    saveSecret(id, {
+      title: newName,
+      description: newIssuer,
+      secret: lastCode.secret,
+    });
+    setCodes((prev) =>
+      prev.map((v) =>
+        v.id === id ? { ...v, name: newName, issuer: newIssuer } : v
+      )
+    );
+  };
+
   return (
     <div className="flex flex-col h-screen bg-gray-50">
       <header className="fixed top-0 left-0 right-0 bg-gray-50 z-10 px-4 py-4 border-b border-gray-200">
@@ -362,6 +379,9 @@ export function AuthContent() {
                   code={code.code}
                   timeRemaining={(timeRemaining / 30) * 100}
                   onDelete={() => handleDelete(code.id)}
+                  onEdit={(newName, newIssuer) =>
+                    handleEdit(code.id, newName, newIssuer)
+                  }
                 />
               ))}
             </div>

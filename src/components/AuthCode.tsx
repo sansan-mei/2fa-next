@@ -1,9 +1,10 @@
 "use client";
 
 import { copyToClipboard } from "@/utils/clipboard";
-import { Check, Copy, MoreVertical, Trash2 } from "lucide-react";
+import { Check, Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
+import { EditDialog } from "./EditDialog";
 
 interface AuthCodeProps {
   name: string;
@@ -11,6 +12,7 @@ interface AuthCodeProps {
   code: string;
   timeRemaining: number;
   onDelete?: () => void;
+  onEdit?: (name: string, issuer: string) => void;
 }
 
 export function AuthCode({
@@ -19,9 +21,11 @@ export function AuthCode({
   code,
   timeRemaining,
   onDelete,
+  onEdit,
 }: AuthCodeProps) {
   const [showMenu, setShowMenu] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -64,6 +68,16 @@ export function AuthCode({
                   : "transform -translate-y-1 opacity-0 invisible"
               }`}
             >
+              <button
+                onClick={() => {
+                  setShowMenu(false);
+                  setShowEditDialog(true);
+                }}
+                className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+              >
+                <Pencil className="w-4 h-4" />
+                编辑
+              </button>
               <button
                 onClick={() => {
                   setShowMenu(false);
@@ -115,6 +129,17 @@ export function AuthCode({
         onConfirm={onDelete || (() => {})}
         title="删除认证代码"
         description={`确定要删除 ${issuer} (${name}) 的认证代码吗？此操作无法撤销。`}
+      />
+
+      <EditDialog
+        isOpen={showEditDialog}
+        onClose={() => setShowEditDialog(false)}
+        onConfirm={(newName, newIssuer) => {
+          onEdit?.(newName, newIssuer);
+          setShowEditDialog(false);
+        }}
+        initialName={name}
+        initialIssuer={issuer}
       />
     </>
   );
