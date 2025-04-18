@@ -102,3 +102,15 @@ export async function importData(data: ExportDataItem[]): Promise<number> {
 
   return importedCount;
 }
+
+// 点击导出二维码时的处理函数
+export const handleDownloadQRCode = (exportDataUrl: string | null) => {
+  if (!exportDataUrl) return;
+
+  const link = document.createElement("a");
+  link.href = exportDataUrl;
+  link.download = "2fa-backup.png";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+};

@@ -4,6 +4,7 @@ import { getPublicKey, postToTp } from "@/utils/api";
 import { rsaEncrypt } from "@/utils/crypto";
 import {
   generateExportQRCode,
+  handleDownloadQRCode,
   importData,
   parseBase64Data,
 } from "@/utils/export";
@@ -209,26 +210,6 @@ export function AuthContent() {
     generateToTpCodeByIDB()
       .then(setCodes)
       .finally(() => setLoading(false));
-
-    // 加载所有密钥
-    const loadSecrets = async () => {
-      const ids = await getAllSecrets();
-      const secretsMap: Record<string, string> = {};
-
-      for (const id of ids) {
-        const value = await getSecret(id as string);
-        if (value) {
-          secretsMap[id as string] = value.secret;
-          saveSecret(id as string, {
-            secret: value.secret,
-            title: value.title,
-            description: value.description,
-          });
-        }
-      }
-    };
-
-    loadSecrets();
   }, []);
 
   // 更新 TOTP 码的函数
@@ -271,16 +252,7 @@ export function AuthContent() {
   }, [updateToTpCodes]);
 
   // 点击导出二维码时的处理函数
-  const handleExportQRCodeDownload = () => {
-    if (!exportDataUrl) return;
-
-    const link = document.createElement("a");
-    link.href = exportDataUrl;
-    link.download = "2fa-backup.png";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
+  const handleExportQRCodeDownload = () => handleDownloadQRCode(exportDataUrl);
 
   const handleEdit = async (id: string, newName: string, newIssuer: string) => {
     const lastCode = await getSecret(id);
@@ -304,7 +276,7 @@ export function AuthContent() {
       <header className="fixed top-0 left-0 right-0 bg-gray-50 z-10 px-4 py-4 border-b border-gray-200">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-            TOTP 验证器
+            古歌 验证器
           </h1>
           <div className="flex items-center gap-1">
             {codes.length > 0 && (
