@@ -220,8 +220,19 @@ export function AuthContent() {
         if (!value) {
           return v;
         }
-        v.code = generateTOTPCode(value.secret);
-        return v;
+        const newCode = generateTOTPCode(value.secret);
+        // 如果新生成的 code 和当前显示的相同，则延迟更新
+        if (newCode === v.code) {
+          setTimeout(() => {
+            const delayedCode = generateTOTPCode(value.secret);
+            setCodes((prev) =>
+              prev.map((item) =>
+                item.id === v.id ? { ...item, code: delayedCode } : item
+              )
+            );
+          }, 1500); // 延迟 1.5 秒后更新
+        }
+        return { ...v, code: newCode };
       })
     );
     if (updatedCodes.length > 0) {
