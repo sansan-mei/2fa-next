@@ -20,18 +20,40 @@ export function TimeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // 使用utils中的函数计算当前时间到下一个30秒整点的剩余时间
+    let animationFrameId: number;
+    let lastUpdateTime = Date.now();
+
     const updateTimeRemaining = () => {
-      const remaining = getTimeRemainingToNextCycle(timeOffset);
-      setTimeRemaining(remaining);
+      const currentTime = Date.now();
+      // 确保至少每 200ms 更新一次，避免过于频繁的更新
+      if (currentTime - lastUpdateTime >= 200) {
+        const remaining = getTimeRemainingToNextCycle(timeOffset);
+        setTimeRemaining(remaining);
+        lastUpdateTime = currentTime;
+      }
+      animationFrameId = requestAnimationFrame(updateTimeRemaining);
+    };
+
+    // 处理页面可见性变化
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // 页面重新可见时，立即更新一次时间
+        const remaining = getTimeRemainingToNextCycle(timeOffset);
+        setTimeRemaining(remaining);
+        lastUpdateTime = Date.now();
+      }
     };
 
     // 初始计算
     updateTimeRemaining();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-    // 每秒更新一次（对齐实际时间）
-    const timer = setInterval(updateTimeRemaining, 1000);
-    return () => clearInterval(timer);
+    return () => {
+      if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+      }
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [timeOffset]);
 
   async function _getNtpTime() {

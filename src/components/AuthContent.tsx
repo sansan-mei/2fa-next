@@ -16,7 +16,7 @@ import {
 import { parseTOTPQRCode } from "@/utils/qr";
 import { generateTOTPCode, generateToTpCodeByIDB } from "@/utils/totp";
 import { Download, Loader2, PlusCircle, QrCode, ScanLine } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
 import { AuthCode } from "./AuthCode";
 import { ScanDialog } from "./ScanDialog";
@@ -231,25 +231,44 @@ export function AuthContent() {
     loadSecrets();
   }, []);
 
+  // 更新 TOTP 码的函数
+  const updateToTpCodes = useCallback(async () => {
+    const updatedCodes = await Promise.all(
+      codes.map(async (v) => {
+        const value = await getSecret(v.id);
+        if (!value) {
+          return v;
+        }
+        v.code = generateTOTPCode(value.secret);
+        return v;
+      })
+    );
+    if (updatedCodes.length > 0) {
+      setCodes(updatedCodes);
+    }
+  }, [codes]);
+
+  // 监听时间变化
   useEffect(() => {
     if (timeRemaining === 30) {
-      Promise.all(
-        codes.map(async (v) => {
-          const value = await getSecret(v.id);
-          if (!value) {
-            return v;
-          }
-          v.code = generateTOTPCode(value.secret);
-          return v;
-        })
-      ).then((res) => {
-        if (res.length === 0) {
-          return;
-        }
-        setCodes(res);
-      });
+      updateToTpCodes();
     }
-  }, [timeRemaining]);
+  }, [timeRemaining, updateToTpCodes]);
+
+  // 监听页面可见性变化
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // 页面重新可见时，立即更新一次 TOTP 码
+        updateToTpCodes();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [updateToTpCodes]);
 
   // 点击导出二维码时的处理函数
   const handleExportQRCodeDownload = () => {
