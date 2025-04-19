@@ -1,3 +1,4 @@
+import { Snowflake } from "@theinternetfolks/snowflake";
 import { TOTP } from "totp-generator";
 import { getAllSecrets, getSecret } from "./idb";
 
@@ -26,4 +27,8 @@ export async function generateToTpCodeByIDB(): Promise<AuthItem[]> {
   return Promise.all(resultPromises).then((result) =>
     result.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
   );
+}
+
+export function generateSnowflake() {
+  return Snowflake.generate();
 }

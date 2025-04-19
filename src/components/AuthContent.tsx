@@ -1,7 +1,5 @@
 "use client";
 
-import { getPublicKey, postToTp } from "@/utils/api";
-import { rsaEncrypt } from "@/utils/crypto";
 import {
   generateExportQRCode,
   handleDownloadQRCode,
@@ -15,7 +13,11 @@ import {
   saveSecret,
 } from "@/utils/idb";
 import { parseTOTPQRCode } from "@/utils/qr";
-import { generateTOTPCode, generateToTpCodeByIDB } from "@/utils/totp";
+import {
+  generateSnowflake,
+  generateTOTPCode,
+  generateToTpCodeByIDB,
+} from "@/utils/totp";
 import {
   closestCenter,
   DndContext,
@@ -100,24 +102,23 @@ export function AuthContent() {
     key: string;
     description: string;
   }) => {
-    // 请求rsa公钥回来
-    const { publicKey } = await getPublicKey();
+    const snowflakeId = generateSnowflake();
 
-    const encrypted = rsaEncrypt(key, publicKey);
-
-    const res = await postToTp({
-      name: title,
-      issuer: description,
-      code: encrypted,
-    });
-
-    await saveSecret(res.id, {
+    await saveSecret(snowflakeId, {
       secret: key,
       title,
       description,
       order: codes.length,
     });
-    setCodes((prev) => [...prev, res]);
+    setCodes((prev) => [
+      ...prev,
+      {
+        id: snowflakeId,
+        name: title,
+        issuer: description,
+        code: generateTOTPCode(key),
+      },
+    ]);
   };
 
   // 处理扫描结果
