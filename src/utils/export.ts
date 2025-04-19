@@ -34,7 +34,7 @@ export function parseBase64Data(base64String: string): ExportDataItem[] {
     let jsonString;
     try {
       // 首先尝试标准的Base64解码方法
-      jsonString = decodeURIComponent(escape(atob(base64String)));
+      jsonString = decodeURIComponent(atob(base64String));
     } catch (decodeError) {
       console.error("标准Base64解码失败:", decodeError);
 

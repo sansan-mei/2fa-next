@@ -42,6 +42,7 @@ interface ExportDataItem {
   secret: string;
   title: string;
   description?: string;
+  order?: number;
 }
 
 export function AuthContent() {
@@ -210,10 +211,11 @@ export function AuthContent() {
             secret: value.secret,
             title: value.title,
             description: value.description,
+            order: value.order,
           });
         }
       }
-
+      debugger;
       // 生成QR码
       const dataUrl = await generateExportQRCode(exportData);
       setExportDataUrl(dataUrl);
