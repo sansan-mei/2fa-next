@@ -16,11 +16,25 @@ import {
 } from "@/utils/idb";
 import { parseTOTPQRCode } from "@/utils/qr";
 import { generateTOTPCode, generateToTpCodeByIDB } from "@/utils/totp";
+import {
+  closestCenter,
+  DndContext,
+  DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { Download, Loader2, PlusCircle, QrCode, ScanLine } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AddCodeDialog } from "./AddCodeDialog";
-import { AuthCode } from "./AuthCode";
 import { ScanDialog } from "./ScanDialog";
+import { SortableAuthCode } from "./SortableAuthCode";
 import { useTimeRemaining } from "./TimeProvider";
 
 interface ExportDataItem {
@@ -41,6 +55,18 @@ export function AuthContent() {
   const [exportDataUrl, setExportDataUrl] = useState<string | null>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 需要移动5像素才触发拖拽
+        delay: 200,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // 点击外部时关闭下拉菜单
   useEffect(() => {
@@ -88,6 +114,7 @@ export function AuthContent() {
       secret: key,
       title,
       description,
+      order: codes.length,
     });
     setCodes((prev) => [...prev, res]);
   };
@@ -272,12 +299,38 @@ export function AuthContent() {
       title: newName,
       description: newIssuer,
       secret: lastCode.secret,
+      order: lastCode.order,
     });
     setCodes((prev) =>
       prev.map((v) =>
         v.id === id ? { ...v, name: newName, issuer: newIssuer } : v
       )
     );
+  };
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (active.id !== over?.id) {
+      setCodes((items) => {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over?.id);
+
+        const newItems = [...items];
+        const [removed] = newItems.splice(oldIndex, 1);
+        newItems.splice(newIndex, 0, removed);
+
+        // 更新 IndexedDB 中的数据
+        newItems.forEach(async (item, index) => {
+          const secret = await getSecret(item.id);
+          if (secret) {
+            await saveSecret(item.id, { ...secret, order: index });
+          }
+        });
+
+        return newItems;
+      });
+    }
   };
 
   return (
@@ -370,21 +423,33 @@ export function AuthContent() {
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max">
-              {codes.map((code) => (
-                <AuthCode
-                  key={code.id}
-                  name={code.name}
-                  issuer={code.issuer}
-                  code={code.code}
-                  timeRemaining={(timeRemaining / 30) * 100}
-                  onDelete={() => handleDelete(code.id)}
-                  onEdit={(newName, newIssuer) =>
-                    handleEdit(code.id, newName, newIssuer)
-                  }
-                />
-              ))}
-            </div>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={codes.map((code) => code.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max touch-none">
+                  {codes.map((code) => (
+                    <SortableAuthCode
+                      key={code.id}
+                      id={code.id}
+                      name={code.name}
+                      issuer={code.issuer}
+                      code={code.code}
+                      timeRemaining={(timeRemaining / 30) * 100}
+                      onDelete={() => handleDelete(code.id)}
+                      onEdit={(newName, newIssuer) =>
+                        handleEdit(code.id, newName, newIssuer)
+                      }
+                    />
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       </main>

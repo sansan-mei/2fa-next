@@ -4,6 +4,7 @@ declare type AuthItem = {
   name: string;
   issuer: string | undefined;
   code: string;
+  order?: number;
 };
 
 declare type AnyObject = Record<string, any>;
@@ -14,4 +15,5 @@ declare type IDBValue = {
   secret: string;
   title: string;
   description?: string;
+  order?: number;
 };

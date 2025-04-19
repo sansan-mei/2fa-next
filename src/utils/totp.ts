@@ -20,7 +20,10 @@ export async function generateToTpCodeByIDB(): Promise<AuthItem[]> {
       name: value!.title,
       issuer: value!.description,
       code: generateTOTPCode(value!.secret),
+      order: value!.order,
     };
   });
-  return Promise.all(resultPromises);
+  return Promise.all(resultPromises).then((result) =>
+    result.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
+  );
 }
