@@ -215,7 +215,7 @@ export function AuthContent() {
           });
         }
       }
-      debugger;
+
       // 生成QR码
       const dataUrl = await generateExportQRCode(exportData);
       setExportDataUrl(dataUrl);

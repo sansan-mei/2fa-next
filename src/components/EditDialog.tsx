@@ -26,6 +26,12 @@ export function EditDialog({
     onConfirm(name, issuer);
   };
 
+  const _onClose = () => {
+    setName(initialName);
+    setIssuer(initialIssuer);
+    onClose();
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -35,7 +41,7 @@ export function EditDialog({
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-medium text-gray-900">编辑认证代码</h3>
           <button
-            onClick={onClose}
+            onClick={_onClose}
             className="p-1 hover:bg-gray-100 rounded-full transition-colors"
           >
             <X className="w-5 h-5 text-gray-500" />
