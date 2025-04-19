@@ -95,8 +95,6 @@ export function AuthContent() {
   // 处理扫描结果
   const handleScanResult = async (result: string) => {
     try {
-      console.log("扫描结果:", result.substring(0, 50) + "..."); // 调试信息
-
       // 首先检查是否为有效的URL格式
       if (result.startsWith("otpauth://")) {
         // 处理标准TOTP二维码

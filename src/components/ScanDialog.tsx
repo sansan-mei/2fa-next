@@ -50,7 +50,7 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
 
       // 请求摄像头权限，优先使用后置摄像头
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" },
+        video: { facingMode: "environment", frameRate: 24 },
       });
 
       setStream(mediaStream);
@@ -76,10 +76,13 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
       animationRef.current = null;
     }
 
-    if (stream) {
-      stream.getTracks().forEach((track) => track.stop());
-      setStream(null);
-    }
+    setStream((cur) => {
+      const _stream = cur || stream;
+      if (_stream) {
+        _stream.getTracks().forEach((track) => track.stop());
+      }
+      return null;
+    });
 
     setIsScanning(false);
   };
@@ -90,57 +93,54 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
-    const context = canvas.getContext("2d");
+    const context = canvas.getContext("2d", { willReadFrequently: true });
 
     if (!context) return;
 
-    const scanFrame = () => {
-      if (video.readyState === video.HAVE_ENOUGH_DATA) {
-        // 设置canvas尺寸
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
+    // 添加视频加载事件监听
+    video.addEventListener("loadeddata", () => {
+      const scanFrame = () => {
+        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+          // 设置canvas尺寸
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
 
-        // 在canvas上绘制视频帧
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+          // 在canvas上绘制视频帧
+          context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        // 获取图像数据
-        const imageData = context.getImageData(
-          0,
-          0,
-          canvas.width,
-          canvas.height
-        );
+          // 获取图像数据
+          const imageData = context.getImageData(
+            0,
+            0,
+            canvas.width,
+            canvas.height
+          );
 
-        // 使用工具函数扫描QR码
-        const qrData = scanQRCode(imageData);
+          // 使用工具函数扫描QR码
+          const qrData = scanQRCode(imageData);
 
-        if (qrData) {
-          // 找到二维码
-          stopVideoScan();
-          onScan(qrData);
-          return;
+          if (qrData) {
+            stopVideoScan();
+            onScan(qrData);
+            return;
+          }
         }
-      }
 
-      // 继续扫描循环
+        // 继续扫描循环
+        animationRef.current = requestAnimationFrame(scanFrame);
+      };
+
+      // 开始扫描循环
       animationRef.current = requestAnimationFrame(scanFrame);
-    };
-
-    animationRef.current = requestAnimationFrame(scanFrame);
+    });
   };
 
   // 在对话框关闭或组件卸载时清理资源
   useEffect(() => {
     return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
+      stopVideoScan();
     };
-  }, [stream]);
+  }, []);
 
   useEffect(() => {
     if (!isOpen && isScanning) {
