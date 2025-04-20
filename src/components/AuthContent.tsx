@@ -32,21 +32,14 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { Download, Loader2, PlusCircle, ScanLine } from "lucide-react";
-import {
-  Fragment,
-  lazy,
-  Suspense,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTimeRemaining } from "../store/TimeProvider";
+import _Lazy from "./_lazy";
 
-const HeaderLazy = lazy(() => import("./HeaderLazy"));
-const AddCodeDialog = lazy(() => import("./AddCodeDialog"));
-const ScanDialog = lazy(() => import("./ScanDialog"));
-const SortableAuthCode = lazy(() => import("./SortableAuthCode"));
+const HeaderLazy = _Lazy(() => import("./HeaderLazy"));
+const AddCodeDialog = _Lazy(() => import("./AddCodeDialog"));
+const ScanDialog = _Lazy(() => import("./ScanDialog"));
+const SortableAuthCode = _Lazy(() => import("./SortableAuthCode"));
 
 export function AuthContent() {
   const [codes, setCodes] = useState<AuthItem[]>([]);
@@ -320,14 +313,12 @@ export function AuthContent() {
 
   return (
     <Fragment>
-      <Suspense fallback={null}>
-        <HeaderLazy
-          codes={codes}
-          onExportQRCode={handleExportQRCode}
-          onShowAddDialog={() => setShowAddDialog(true)}
-          onShowScanDialog={() => setShowScanDialog(true)}
-        />
-      </Suspense>
+      <HeaderLazy
+        codes={codes}
+        onExportQRCode={handleExportQRCode}
+        onShowAddDialog={() => setShowAddDialog(true)}
+        onShowScanDialog={() => setShowScanDialog(true)}
+      />
 
       <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
         <div className="max-w-7xl mx-auto mt-1.5">
@@ -442,21 +433,17 @@ export function AuthContent() {
         </div>
       )}
 
-      <Suspense fallback={null}>
-        <AddCodeDialog
-          isOpen={showAddDialog}
-          onClose={() => setShowAddDialog(false)}
-          onAdd={handleAdd}
-        />
-      </Suspense>
+      <AddCodeDialog
+        isOpen={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onAdd={handleAdd}
+      />
 
-      <Suspense fallback={null}>
-        <ScanDialog
-          isOpen={showScanDialog}
-          onClose={() => setShowScanDialog(false)}
-          onScan={handleScanResult}
-        />
-      </Suspense>
+      <ScanDialog
+        isOpen={showScanDialog}
+        onClose={() => setShowScanDialog(false)}
+        onScan={handleScanResult}
+      />
     </Fragment>
   );
 }

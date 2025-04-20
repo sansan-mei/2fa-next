@@ -3,8 +3,10 @@
 import { copyToClipboard } from "@/utils/clipboard";
 import { Check, Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
-import { ConfirmDialog } from "./ConfirmDialog";
-import EditDialog from "./EditDialog";
+import _Lazy from "./_lazy";
+
+const ConfirmDialog = _Lazy(() => import("./ConfirmDialog"));
+const EditDialog = _Lazy(() => import("./EditDialog"));
 
 interface AuthCodeProps {
   name: string;

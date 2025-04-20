@@ -8,7 +8,7 @@ interface ConfirmDialogProps {
   description: string;
 }
 
-export function ConfirmDialog({
+function ConfirmDialog({
   isOpen,
   onClose,
   onConfirm,
@@ -50,3 +50,5 @@ export function ConfirmDialog({
     </div>
   );
 }
+
+export default ConfirmDialog;
