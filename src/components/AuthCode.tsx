@@ -49,9 +49,7 @@ export function AuthCode({
             <h3 className="font-medium text-gray-900 truncate group-hover:text-blue-600 transition-colors">
               {name}
             </h3>
-            {issuer && (
-              <p className="text-sm text-gray-500 truncate">{issuer}</p>
-            )}
+            <p className="text-sm text-gray-500 truncate">{issuer || "-"}</p>
           </div>
           <div className="relative ml-2">
             <button

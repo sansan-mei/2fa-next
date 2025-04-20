@@ -39,14 +39,6 @@ import { ScanDialog } from "./ScanDialog";
 import { SortableAuthCode } from "./SortableAuthCode";
 import { useTimeRemaining } from "./TimeProvider";
 
-interface ExportDataItem {
-  id: string;
-  secret: string;
-  title: string;
-  description?: string;
-  order?: number;
-}
-
 export function AuthContent() {
   const [codes, setCodes] = useState<AuthItem[]>([]);
   const [loading, setLoading] = useState(true);

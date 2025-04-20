@@ -17,3 +17,11 @@ declare type IDBValue = {
   description?: string;
   order?: number;
 };
+
+declare interface ExportDataItem {
+  id: string;
+  secret: string;
+  title: string;
+  description?: string;
+  order?: number;
+}
