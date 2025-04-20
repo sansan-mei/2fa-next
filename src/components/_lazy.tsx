@@ -1,18 +1,13 @@
-import { ComponentType, lazy, LazyExoticComponent, Suspense } from "react";
+import dynamic from "next/dynamic";
+import { ComponentType } from "react";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export default function _Lazy<T extends ComponentType<any>>(
   load: () => Promise<{ default: T }>,
   fallback?: React.ReactNode
-): LazyExoticComponent<T> {
-  const LazyComponent = lazy(load);
-  const LazyComponentWrapper = (props: React.ComponentProps<T>) => (
-    <Suspense fallback={fallback}>
-      <LazyComponent {...props} />
-    </Suspense>
-  );
-  Object.defineProperty(LazyComponentWrapper, "displayName", {
-    value: `Lazy(${LazyComponent.name || "Component"})`,
+): ComponentType<React.ComponentProps<T>> {
+  return dynamic(load, {
+    ssr: false, // 跳过服务端渲染，避免Hydration不一致
+    loading: () => (fallback ? <>{fallback}</> : null), // 服务端和客户端的占位
   });
-  return LazyComponentWrapper as LazyExoticComponent<T>;
 }
