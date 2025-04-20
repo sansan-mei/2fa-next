@@ -33,6 +33,7 @@ import {
 } from "@dnd-kit/sortable";
 import { Download, Loader2, PlusCircle, ScanLine } from "lucide-react";
 import {
+  Fragment,
   lazy,
   Suspense,
   useCallback,
@@ -318,7 +319,7 @@ export function AuthContent() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <Fragment>
       <Suspense fallback={null}>
         <HeaderLazy
           codes={codes}
@@ -456,6 +457,6 @@ export function AuthContent() {
           onScan={handleScanResult}
         />
       </Suspense>
-    </div>
+    </Fragment>
   );
 }

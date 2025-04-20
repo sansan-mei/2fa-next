@@ -3,8 +3,10 @@ import { TimeProvider } from "@/store/TimeProvider";
 
 export default async function Home() {
   return (
-    <TimeProvider>
-      <AuthContent />
-    </TimeProvider>
+    <div className="flex flex-col h-screen bg-gray-50">
+      <TimeProvider>
+        <AuthContent />
+      </TimeProvider>
+    </div>
   );
 }
