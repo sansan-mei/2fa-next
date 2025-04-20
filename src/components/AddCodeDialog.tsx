@@ -10,7 +10,7 @@ interface AddCodeDialogProps {
   onAdd: (data: { title: string; description: string; key: string }) => void;
 }
 
-export function AddCodeDialog({ isOpen, onClose, onAdd }: AddCodeDialogProps) {
+function AddCodeDialog({ isOpen, onClose, onAdd }: AddCodeDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [key, setKey] = useState("");
@@ -143,3 +143,5 @@ export function AddCodeDialog({ isOpen, onClose, onAdd }: AddCodeDialogProps) {
     </div>
   );
 }
+
+export { AddCodeDialog as default };

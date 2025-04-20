@@ -10,7 +10,7 @@ interface ScanDialogProps {
   onScan: (text: string) => void;
 }
 
-export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
+function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
   const [error, setError] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -245,3 +245,5 @@ export function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
     </div>
   );
 }
+
+export { ScanDialog as default };

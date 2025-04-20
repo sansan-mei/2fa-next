@@ -11,7 +11,7 @@ interface EditDialogProps {
   initialIssuer?: string;
 }
 
-export function EditDialog({
+function EditDialog({
   isOpen,
   onClose,
   onConfirm,
@@ -103,3 +103,5 @@ export function EditDialog({
     </div>
   );
 }
+
+export { EditDialog as default };

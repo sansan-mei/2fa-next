@@ -14,7 +14,7 @@ interface SortableAuthCodeProps {
   onEdit?: (name: string, issuer: string) => void;
 }
 
-export function SortableAuthCode(props: SortableAuthCodeProps) {
+function SortableAuthCode(props: SortableAuthCodeProps) {
   const {
     attributes,
     listeners,
@@ -37,3 +37,5 @@ export function SortableAuthCode(props: SortableAuthCodeProps) {
     </div>
   );
 }
+
+export { SortableAuthCode as default };

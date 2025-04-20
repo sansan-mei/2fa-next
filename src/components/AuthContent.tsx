@@ -1,5 +1,4 @@
 "use client";
-
 import {
   generateExportQRCode,
   handleDownloadQRCode,
@@ -32,24 +31,31 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Download, Loader2, PlusCircle, QrCode, ScanLine } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { AddCodeDialog } from "./AddCodeDialog";
-import { ScanDialog } from "./ScanDialog";
-import { SortableAuthCode } from "./SortableAuthCode";
-import { useTimeRemaining } from "./TimeProvider";
+import { Download, Loader2, PlusCircle, ScanLine } from "lucide-react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { useTimeRemaining } from "../store/TimeProvider";
+
+const HeaderLazy = lazy(() => import("./HeaderLazy"));
+const AddCodeDialog = lazy(() => import("./AddCodeDialog"));
+const ScanDialog = lazy(() => import("./ScanDialog"));
+const SortableAuthCode = lazy(() => import("./SortableAuthCode"));
 
 export function AuthContent() {
   const [codes, setCodes] = useState<AuthItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showScanDialog, setShowScanDialog] = useState(false);
-  const [showAddDropdown, setShowAddDropdown] = useState(false);
   const timeRemaining = useTimeRemaining();
   const [showExportQRCode, setShowExportQRCode] = useState(false);
   const [exportDataUrl, setExportDataUrl] = useState<string | null>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -62,23 +68,6 @@ export function AuthContent() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  // 点击外部时关闭下拉菜单
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowAddDropdown(false);
-      }
-    }
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
 
   const handleDelete = (id: string) => {
     deleteSecret(id);
@@ -330,56 +319,14 @@ export function AuthContent() {
 
   return (
     <div className="flex flex-col h-screen bg-gray-50">
-      <header className="fixed top-0 left-0 right-0 bg-gray-50 z-10 px-4 py-4 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl md:text-2xl font-bold text-gray-900">
-            古歌 验证器
-          </h1>
-          <div className="flex items-center gap-1">
-            {codes.length > 0 && (
-              <button
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                onClick={handleExportQRCode}
-              >
-                <QrCode className="w-6 h-6 text-gray-900" />
-              </button>
-            )}
-            <div className="relative" ref={dropdownRef}>
-              <button
-                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                onClick={() => setShowAddDropdown(!showAddDropdown)}
-              >
-                <PlusCircle className="w-6 h-6 text-gray-900" />
-              </button>
-
-              {showAddDropdown && (
-                <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
-                  <button
-                    onClick={() => {
-                      setShowAddDropdown(false);
-                      setShowAddDialog(true);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    <PlusCircle className="w-4 h-4" />
-                    手动添加
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowAddDropdown(false);
-                      setShowScanDialog(true);
-                    }}
-                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
-                  >
-                    <ScanLine className="w-4 h-4" />
-                    扫码添加
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <Suspense fallback={null}>
+        <HeaderLazy
+          codes={codes}
+          onExportQRCode={handleExportQRCode}
+          onShowAddDialog={() => setShowAddDialog(true)}
+          onShowScanDialog={() => setShowScanDialog(true)}
+        />
+      </Suspense>
 
       <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
         <div className="max-w-7xl mx-auto mt-1.5">
@@ -494,17 +441,21 @@ export function AuthContent() {
         </div>
       )}
 
-      <AddCodeDialog
-        isOpen={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
-        onAdd={handleAdd}
-      />
+      <Suspense fallback={null}>
+        <AddCodeDialog
+          isOpen={showAddDialog}
+          onClose={() => setShowAddDialog(false)}
+          onAdd={handleAdd}
+        />
+      </Suspense>
 
-      <ScanDialog
-        isOpen={showScanDialog}
-        onClose={() => setShowScanDialog(false)}
-        onScan={handleScanResult}
-      />
+      <Suspense fallback={null}>
+        <ScanDialog
+          isOpen={showScanDialog}
+          onClose={() => setShowScanDialog(false)}
+          onScan={handleScanResult}
+        />
+      </Suspense>
     </div>
   );
 }

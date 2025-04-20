@@ -4,7 +4,7 @@ import { copyToClipboard } from "@/utils/clipboard";
 import { Check, Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { ConfirmDialog } from "./ConfirmDialog";
-import { EditDialog } from "./EditDialog";
+import EditDialog from "./EditDialog";
 
 interface AuthCodeProps {
   name: string;
