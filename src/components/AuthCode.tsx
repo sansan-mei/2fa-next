@@ -2,7 +2,7 @@
 
 import { copyToClipboard } from "@/utils/clipboard";
 import { Check, Copy, MoreVertical, Pencil, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import _Lazy from "./_lazy";
 
 const ConfirmDialog = _Lazy(() => import("./ConfirmDialog"));
@@ -29,6 +29,14 @@ export function AuthCode({
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    // 使用 requestAnimationFrame 确保在下一帧渲染动画
+    requestAnimationFrame(() => {
+      setShow(true);
+    });
+  }, []);
 
   const handleCopy = async () => {
     const success = await copyToClipboard(code.replace(/\s/g, ""));
@@ -41,7 +49,9 @@ export function AuthCode({
   return (
     <>
       <div
-        className="group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-500 ease-out hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-300"
+        className={`group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-500 ease-out hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-300 ${
+          show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+        }`}
         onMouseLeave={() => setShowMenu(false)}
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/30 to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out rounded-lg pointer-events-none" />

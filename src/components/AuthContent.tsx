@@ -60,8 +60,8 @@ export function AuthContent() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 20, // 增加触发距离
-        delay: 250, // 减少延迟时间
+        distance: 10, // 增加触发距离
+        delay: 500, // 减少延迟时间
         tolerance: 5, // 添加容差值
         pressure: 0.5, // 添加压力阈值
       },
@@ -262,7 +262,7 @@ export function AuthContent() {
     );
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (active.id !== over?.id) {
@@ -376,7 +376,9 @@ export function AuthContent() {
                 items={codes.map((code) => code.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max">
+                <div
+                  className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max`}
+                >
                   {codes.map((code) => (
                     <SortableAuthCode
                       key={code.id}

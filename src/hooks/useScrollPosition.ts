@@ -32,6 +32,7 @@ export function useScrollPosition({
       for (const entry of entries) {
         if (entry.target === ref.current) {
           restoreScrollPosition();
+          observer.disconnect();
         }
       }
     });
@@ -44,6 +45,7 @@ export function useScrollPosition({
       for (const entry of entries.getEntries()) {
         if (entry.entryType === "largest-contentful-paint") {
           restoreScrollPosition();
+          observer.disconnect();
         }
       }
     });
