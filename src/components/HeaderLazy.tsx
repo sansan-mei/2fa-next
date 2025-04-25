@@ -1,5 +1,5 @@
 "use client";
-import { PlusCircle, QrCode, ScanLine } from "lucide-react";
+import { Github, PlusCircle, QrCode, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface HeaderLazyProps {
@@ -79,6 +79,18 @@ export function HeaderLazy({
                 >
                   <ScanLine className="w-4 h-4" />
                   扫码添加
+                </button>
+                <button
+                  onClick={() => {
+                    window.open(
+                      "https://github.com/sansan-mei/2fa-next",
+                      "_blank"
+                    );
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Github className="w-4 h-4" />
+                  项目地址
                 </button>
               </div>
             )}
