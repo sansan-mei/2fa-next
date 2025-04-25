@@ -114,3 +114,15 @@ export const handleDownloadQRCode = (exportDataUrl: string | null) => {
   link.click();
   document.body.removeChild(link);
 };
+
+// 导出dnd-kit的配置
+export const dndConfig = () => {
+  return {
+    activationConstraint: {
+      distance: 5, // 增加触发距离
+      delay: 500, // 减少延迟时间
+      tolerance: 5, // 添加容差值
+      pressure: 0.5, // 添加压力阈值
+    },
+  };
+};

@@ -1,6 +1,8 @@
 "use client";
 import HeaderFallback from "@/ui/headerFallback";
+import Loader from "@/ui/loader";
 import {
+  dndConfig,
   generateExportQRCode,
   handleDownloadQRCode,
   importData,
@@ -22,17 +24,16 @@ import {
   closestCenter,
   DndContext,
   DragEndEvent,
-  KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
 import {
   SortableContext,
-  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
-import { Download, Loader2, PlusCircle, ScanLine } from "lucide-react";
+import { Download, PlusCircle, ScanLine } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTimeRemaining } from "../store/TimeProvider";
 import _Lazy from "./_lazy";
@@ -51,19 +52,11 @@ export function AuthContent() {
   const [showExportQRCode, setShowExportQRCode] = useState(false);
   const [exportDataUrl, setExportDataUrl] = useState<string | null>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
 
   const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 10, // 增加触发距离
-        delay: 500, // 减少延迟时间
-        tolerance: 5, // 添加容差值
-        pressure: 0.5, // 添加压力阈值
-      },
-    }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
+    useSensor(PointerSensor, dndConfig()),
+    useSensor(TouchSensor, dndConfig())
   );
 
   const handleDelete = (id: string) => {
@@ -324,11 +317,7 @@ export function AuthContent() {
       <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
         <div className="max-w-7xl mx-auto mt-1.5">
           {loading ? (
-            <div className="h-[calc(100vh-150px)] flex items-center justify-center">
-              <div className="flex flex-col items-center gap-2">
-                <Loader2 className="w-12 h-12 text-gray-900 animate-spin" />
-              </div>
-            </div>
+            <Loader />
           ) : codes.length === 0 ? (
             <div className="md:min-h-[calc(100vh-20rem)] flex items-center">
               <div className="max-w-md mx-auto flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 rounded-lg animate-in fade-in duration-500">
@@ -361,14 +350,21 @@ export function AuthContent() {
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
+              onDragStart={() => setIsDragging(true)}
+              onDragEnd={(event) => {
+                setIsDragging(false);
+                handleDragEnd(event);
+              }}
+              onDragCancel={() => setIsDragging(false)}
             >
               <SortableContext
                 items={codes.map((code) => code.id)}
                 strategy={verticalListSortingStrategy}
+                data-dragging={isDragging || undefined}
               >
                 <div
                   className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max`}
+                  data-dragging={isDragging || undefined}
                 >
                   {codes.map((code) => (
                     <SortableAuthCode

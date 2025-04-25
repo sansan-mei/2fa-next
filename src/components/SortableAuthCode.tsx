@@ -32,7 +32,13 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="sortable-item"
+    >
       <AuthCode {...props} />
     </div>
   );
