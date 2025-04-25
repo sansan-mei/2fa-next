@@ -1,5 +1,4 @@
 "use client";
-import { useScrollPosition } from "@/hooks/useScrollPosition";
 import HeaderFallback from "@/ui/headerFallback";
 import {
   generateExportQRCode,
@@ -52,10 +51,6 @@ export function AuthContent() {
   const [showExportQRCode, setShowExportQRCode] = useState(false);
   const [exportDataUrl, setExportDataUrl] = useState<string | null>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
-
-  const { ref: mainRef, restoreScrollPosition } = useScrollPosition({
-    key: "2fa-scroll-position",
-  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -326,11 +321,7 @@ export function AuthContent() {
         onShowScanDialog={() => setShowScanDialog(true)}
       />
 
-      <main
-        className="flex-1 overflow-auto pt-[72px] pb-4 px-4"
-        ref={mainRef}
-        onLoad={restoreScrollPosition}
-      >
+      <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
         <div className="max-w-7xl mx-auto mt-1.5">
           {loading ? (
             <div className="h-[calc(100vh-150px)] flex items-center justify-center">
