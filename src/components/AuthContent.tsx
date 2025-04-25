@@ -1,4 +1,5 @@
 "use client";
+import { useScrollPosition } from "@/hooks/useScrollPosition";
 import HeaderFallback from "@/ui/headerFallback";
 import {
   generateExportQRCode,
@@ -51,6 +52,10 @@ export function AuthContent() {
   const [showExportQRCode, setShowExportQRCode] = useState(false);
   const [exportDataUrl, setExportDataUrl] = useState<string | null>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
+
+  const { ref: mainRef, restoreScrollPosition } = useScrollPosition({
+    key: "2fa-scroll-position",
+  });
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -206,17 +211,7 @@ export function AuthContent() {
   };
 
   // 关闭二维码对话框
-  const closeQRCodeDialog = () => {
-    setShowExportQRCode(false);
-  };
-
-  useEffect(() => {
-    // 初始化时获取codes
-    setLoading(true);
-    generateToTpCodeByIDB()
-      .then(setCodes)
-      .finally(() => setLoading(false));
-  }, []);
+  const closeQRCodeDialog = () => setShowExportQRCode(false);
 
   // 更新 TOTP 码的函数
   const updateToTpCodes = useCallback(async () => {
@@ -245,28 +240,6 @@ export function AuthContent() {
       setCodes(updatedCodes);
     }
   }, [codes]);
-
-  // 监听时间变化
-  useEffect(() => {
-    if (timeRemaining === 30) {
-      updateToTpCodes();
-    }
-  }, [timeRemaining, updateToTpCodes]);
-
-  // 监听页面可见性变化
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        // 页面重新可见时，立即更新一次 TOTP 码
-        updateToTpCodes();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [updateToTpCodes]);
 
   // 点击导出二维码时的处理函数
   const handleExportQRCodeDownload = () => handleDownloadQRCode(exportDataUrl);
@@ -314,6 +287,36 @@ export function AuthContent() {
     }
   };
 
+  useEffect(() => {
+    // 初始化时获取codes
+    setLoading(true);
+    generateToTpCodeByIDB()
+      .then(setCodes)
+      .finally(() => setLoading(false));
+  }, []);
+
+  // 监听时间变化
+  useEffect(() => {
+    if (timeRemaining === 30) {
+      updateToTpCodes();
+    }
+  }, [timeRemaining, updateToTpCodes]);
+
+  // 监听页面可见性变化
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        // 页面重新可见时，立即更新一次 TOTP 码
+        updateToTpCodes();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [updateToTpCodes]);
+
   return (
     <Fragment>
       <HeaderLazy
@@ -323,7 +326,11 @@ export function AuthContent() {
         onShowScanDialog={() => setShowScanDialog(true)}
       />
 
-      <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
+      <main
+        className="flex-1 overflow-auto pt-[72px] pb-4 px-4"
+        ref={mainRef}
+        onLoad={restoreScrollPosition}
+      >
         <div className="max-w-7xl mx-auto mt-1.5">
           {loading ? (
             <div className="h-[calc(100vh-150px)] flex items-center justify-center">
