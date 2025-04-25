@@ -70,8 +70,10 @@ export function AuthContent() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 需要移动5像素才触发拖拽
-        delay: 200,
+        distance: 20, // 增加触发距离
+        delay: 250, // 减少延迟时间
+        tolerance: 5, // 添加容差值
+        pressure: 0.5, // 添加压力阈值
       },
     }),
     useSensor(KeyboardSensor, {
