@@ -384,7 +384,7 @@ export function AuthContent() {
                 items={codes.map((code) => code.id)}
                 strategy={verticalListSortingStrategy}
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max touch-none">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max">
                   {codes.map((code) => (
                     <SortableAuthCode
                       key={code.id}
