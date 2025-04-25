@@ -98,15 +98,17 @@ export function parseTOTPQRCode(url: string): {
     }
 
     // 解析账户信息 (otpauth://totp/issuer:account?secret=xxx&issuer=xxx)
-    const path = parsedUrl.pathname.substring(1); // 移除开头的斜杠
-    let issuer = params.get("issuer") || "";
+    const path = decodeURIComponent(parsedUrl.pathname.substring(1)); // 移除开头的斜杠并解码
+    let issuer = params.get("issuer")
+      ? decodeURIComponent(params.get("issuer")!)
+      : "";
     let account = path;
 
     // 如果路径包含 issuer:account 格式
     if (path.includes(":")) {
       const parts = path.split(":");
-      if (!issuer) issuer = parts[0];
-      account = parts[1];
+      if (!issuer) issuer = decodeURIComponent(parts[0]);
+      account = decodeURIComponent(parts[1]);
     }
 
     return {
