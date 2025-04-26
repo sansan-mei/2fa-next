@@ -313,7 +313,7 @@ export function AuthContent() {
         onShowScanDialog={() => setShowScanDialog(true)}
       />
 
-      <main className="flex-1 overflow-x-hidden pt-[72px] pb-4 px-4">
+      <main className="flex-1 overflow-x-hidden pt-[72px] pb-4 px-4 will-change-scroll">
         <div className="max-w-7xl mx-auto mt-1.5">
           {loading ? (
             <Loader />
