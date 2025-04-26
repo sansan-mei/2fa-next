@@ -52,7 +52,6 @@ export function AuthContent() {
   const [showExportQRCode, setShowExportQRCode] = useState(false);
   const [exportDataUrl, setExportDataUrl] = useState<string | null>(null);
   const qrCodeRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, dndConfig()),
@@ -314,7 +313,7 @@ export function AuthContent() {
         onShowScanDialog={() => setShowScanDialog(true)}
       />
 
-      <main className="flex-1 overflow-auto pt-[72px] pb-4 px-4">
+      <main className="flex-1 overflow-x-hidden pt-[72px] pb-4 px-4">
         <div className="max-w-7xl mx-auto mt-1.5">
           {loading ? (
             <Loader />
@@ -350,21 +349,14 @@ export function AuthContent() {
             <DndContext
               sensors={sensors}
               collisionDetection={closestCenter}
-              onDragStart={() => setIsDragging(true)}
-              onDragEnd={(event) => {
-                setIsDragging(false);
-                handleDragEnd(event);
-              }}
-              onDragCancel={() => setIsDragging(false)}
+              onDragEnd={handleDragEnd}
             >
               <SortableContext
                 items={codes.map((code) => code.id)}
                 strategy={verticalListSortingStrategy}
-                data-dragging={isDragging || undefined}
               >
                 <div
                   className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 auto-rows-max`}
-                  data-dragging={isDragging || undefined}
                 >
                   {codes.map((code) => (
                     <SortableAuthCode
