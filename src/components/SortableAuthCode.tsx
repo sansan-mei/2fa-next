@@ -68,13 +68,7 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
   };
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...attributes}
-      {...listeners}
-      className="sortable-item"
-    >
+    <div ref={setNodeRef} style={style}>
       <div
         className={`group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-500 ease-out hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-300 ${
           show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
@@ -90,7 +84,12 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
             </h3>
             <p className="text-sm text-gray-500 truncate">{issuer || "-"}</p>
           </div>
-          <div ref={setActivatorNodeRef} className="relative ml-2 touch-none">
+          <div
+            ref={setActivatorNodeRef}
+            className="relative ml-2 touch-none cursor-grab"
+            {...attributes}
+            {...listeners}
+          >
             <button
               className="p-1 hover:bg-gray-100 rounded-full transition-colors"
               onClick={() => setShowMenu(!showMenu)}
@@ -134,7 +133,7 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
         </div>
 
         <div className="relative flex items-center justify-between">
-          <div className="font-mono text-2xl tracking-wider select-all group-hover:text-blue-700 transition-colors">
+          <div className="text-2xl tracking-wider select-none group-hover:text-blue-700 transition-colors">
             <span className="mr-1.5">{code.slice(0, 3)}</span>
             <span>{code.slice(3)}</span>
           </div>
