@@ -8,6 +8,7 @@ import {
   generateSnowflake,
   generateTOTPCode,
   generateToTpCodeByIDB,
+  generateToTpCodeIncremental,
 } from "@/utils/totp";
 import {
   closestCenter,
@@ -223,9 +224,18 @@ export function AuthContent() {
   useEffect(() => {
     // 初始化时获取codes
     setLoading(true);
-    generateToTpCodeByIDB()
-      .then(setCodes)
-      .finally(() => setLoading(false));
+
+    // 使用增量加载函数替代一次性加载
+    generateToTpCodeIncremental((updatedCodes) => {
+      setCodes(updatedCodes);
+      // 只要有数据就取消加载状态
+      if (updatedCodes.length > 0) {
+        setLoading(false);
+      }
+    }).finally(() => {
+      // 无论如何，最终都会结束加载状态
+      setLoading(false);
+    });
   }, []);
 
   // 监听时间变化

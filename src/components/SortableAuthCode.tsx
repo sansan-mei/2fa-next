@@ -71,7 +71,7 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
     <div ref={setNodeRef} style={style}>
       <div
         className={`group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-500 ease-out hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-300 ${
-          show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+          show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
         }`}
         onMouseLeave={() => setShowMenu(false)}
       >
