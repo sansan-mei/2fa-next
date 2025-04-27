@@ -45,7 +45,7 @@ export async function generateToTpCodeIncremental(
     return;
   }
 
-  // 一个一个处理ID，不立即排序
+  let isRendering = 0;
   for (const id of ids) {
     const value = await getSecret(id);
     if (value) {
@@ -60,8 +60,9 @@ export async function generateToTpCodeIncremental(
       // 立即将这个项添加到列表中
       items.push(item);
 
-      // 直接返回当前列表，不进行排序
-      callback([...items]);
+      isRendering = requestAnimationFrame(() => {
+        callback([...items]);
+      });
     }
   }
 
@@ -69,6 +70,9 @@ export async function generateToTpCodeIncremental(
   const sortedItems = [...items].sort(
     (a, b) => (a.order ?? 0) - (b.order ?? 0)
   );
+  if (isRendering) {
+    cancelAnimationFrame(isRendering);
+  }
   callback(sortedItems);
 }
 
