@@ -45,7 +45,7 @@ export async function generateToTpCodeIncremental(
     return;
   }
 
-  // 一个一个处理ID，而不是并行处理
+  // 一个一个处理ID，不立即排序
   for (const id of ids) {
     const value = await getSecret(id);
     if (value) {
@@ -60,13 +60,16 @@ export async function generateToTpCodeIncremental(
       // 立即将这个项添加到列表中
       items.push(item);
 
-      // 对items进行排序并通过回调返回当前所有项
-      const sortedItems = [...items].sort(
-        (a, b) => (a.order ?? 0) - (b.order ?? 0)
-      );
-      callback(sortedItems);
+      // 直接返回当前列表，不进行排序
+      callback([...items]);
     }
   }
+
+  // 所有项加载完成后，再进行一次排序并返回
+  const sortedItems = [...items].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0)
+  );
+  callback(sortedItems);
 }
 
 export function generateSnowflake() {
