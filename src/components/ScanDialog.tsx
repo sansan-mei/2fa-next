@@ -50,7 +50,7 @@ function ScanDialog({ isOpen, onClose, onScan }: ScanDialogProps) {
 
       // 请求摄像头权限，优先使用后置摄像头
       const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", frameRate: 24 },
+        video: { facingMode: "environment", frameRate: 50 },
       });
 
       setStream(mediaStream);
