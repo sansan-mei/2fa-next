@@ -1,22 +1,22 @@
 "use client";
+import { useDialogState } from "@/store/StateProvider";
 import { Github, PlusCircle, QrCode, ScanLine } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface HeaderLazyProps {
   codes: AuthItem[];
-  onExportQRCode: () => void;
   onShowAddDialog: () => void;
   onShowScanDialog: () => void;
 }
 
 export function HeaderLazy({
   codes,
-  onExportQRCode,
   onShowAddDialog,
   onShowScanDialog,
 }: HeaderLazyProps) {
   const [showAddDropdown, setShowAddDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { setState } = useDialogState();
 
   // 点击外部时关闭下拉菜单
   useEffect(() => {
@@ -45,7 +45,7 @@ export function HeaderLazy({
           {codes.length > 0 && (
             <button
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              onClick={onExportQRCode}
+              onClick={() => setState({ showExportQRCode: true })}
             >
               <QrCode className="w-6 h-6 text-gray-900" />
             </button>
