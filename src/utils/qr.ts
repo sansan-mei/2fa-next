@@ -1,5 +1,5 @@
 import jsQR from "jsqr";
-import QRCode from "qrcode";
+import { QRCodeToDataURLOptions, toDataURL } from "qrcode";
 
 /**
  * 从图像数据中扫描二维码
@@ -54,10 +54,10 @@ export async function scanQRCodeFromImage(file: File): Promise<string | null> {
  */
 export async function generateQRCodeDataURL(
   data: string,
-  options?: QRCode.QRCodeToDataURLOptions
+  options?: QRCodeToDataURLOptions
 ): Promise<string> {
   try {
-    return await QRCode.toDataURL(data, {
+    return await toDataURL(data, {
       margin: 1,
       width: 300,
       ...options,
