@@ -12,3 +12,5 @@ const nextConfig: NextConfig = {
   output: "standalone",
 };
 export default withSerwist(nextConfig);
+
+/** @requires {生产环境可以用 "@next/bundle-analyzer"先分析一下代码} */
