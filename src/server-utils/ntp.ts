@@ -1,6 +1,6 @@
 import { getNetworkTime } from "ntp-client";
 
-export async function getNtpTime() {
+export async function getNtpTime(): Promise<Date> {
   return new Promise((resolve, reject) => {
     const startTime = Date.now();
     getNetworkTime("cn.pool.ntp.org", 123, (err, date) => {
