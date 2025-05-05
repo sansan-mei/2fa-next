@@ -8,7 +8,10 @@ const HeaderFallback = () => (
       </h1>
       <div className="flex items-center gap-1">
         <div className="relative">
-          <button className="p-2 hover:bg-gray-100 rounded-full transition-colors">
+          <button
+            aria-label="添加新验证码"
+            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+          >
             <PlusCircle className="w-6 h-6 text-gray-900" />
           </button>
         </div>

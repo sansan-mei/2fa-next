@@ -268,9 +268,9 @@ export function AuthContent() {
             <div className="md:min-h-[calc(100vh-20rem)] flex items-center">
               <div className="max-w-md mx-auto flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 rounded-lg animate-in fade-in duration-500">
                 <PlusCircle className="w-12 h-12 text-gray-400 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900">
+                <h2 className="text-lg font-medium text-gray-900">
                   还没有认证码
-                </h3>
+                </h2>
                 <p className="text-sm text-gray-500 text-center mt-1">
                   通过扫描二维码或输入密钥添加你的第一个2FA认证码
                 </p>
