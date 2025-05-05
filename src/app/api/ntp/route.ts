@@ -1,30 +1,24 @@
-import { getNtpTime } from "@/server-utils/ntp";
+import { checkAndUpdateTimeOffset, getAdjustedTime } from "@/server-utils/ntp";
 import { NextResponse } from "next/server";
 
-// 缓存 Map，存储 IP 和对应的 NTP 时间
-const ntpCache = new Map<string, { time: Date; timestamp: number }>();
+export async function GET() {
+  // 检查并更新时间偏差
+  await checkAndUpdateTimeOffset();
 
-// 缓存过期时间 (1小时)
-const CACHE_EXPIRY = 60 * 60 * 1000;
+  // 获取调整后的时间
+  const time = getAdjustedTime();
 
-export async function GET(request: Request) {
-  // 获取客户端 IP
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const ip = forwardedFor ? forwardedFor.split(",")[0] : "unknown";
+  // 创建响应
+  const response = NextResponse.json({ time: time.toISOString() });
 
-  // 检查缓存
-  const cached = ntpCache.get(ip);
-  const now = Date.now();
+  // 设置缓存控制头
+  response.headers.set(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate"
+  );
+  response.headers.set("Pragma", "no-cache");
+  response.headers.set("Expires", "0");
+  response.headers.set("Surrogate-Control", "no-store");
 
-  if (cached && now - cached.timestamp < CACHE_EXPIRY) {
-    return NextResponse.json({ time: cached.time.toISOString(), cached: true });
-  }
-
-  // 获取新的 NTP 时间
-  const time = await getNtpTime();
-
-  // 更新缓存
-  ntpCache.set(ip, { time, timestamp: now });
-
-  return NextResponse.json({ time: time.toISOString(), cached: false });
+  return response;
 }
