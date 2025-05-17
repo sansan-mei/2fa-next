@@ -21,6 +21,7 @@
     "next": "15.2.4",
     "ntp-client": "^0.5.3",
     "otpauth": "^9.4.0",
+    "peerjs": "^1.5.4",
     "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
