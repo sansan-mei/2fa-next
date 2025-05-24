@@ -1,7 +1,10 @@
 /* eslint-disable @next/next/no-img-element */
 import { useDialogState } from "@/store/StateProvider";
-import { generateExportQRCode, handleDownloadQRCode } from "@/utils/export";
-import { getAllSecrets, getSecret } from "@/utils/idb";
+import {
+  exportAllDataJson,
+  generateExportQRCode,
+  handleDownloadQRCode,
+} from "@/utils/export";
 import { Download } from "lucide-react";
 import { Fragment, useEffect, useRef, useState } from "react";
 
@@ -17,30 +20,7 @@ const ExportDialog = () => {
   // 导出所有数据为二维码
   const handleExportQRCode = async () => {
     try {
-      const ids = await getAllSecrets();
-
-      if (ids.length === 0) {
-        alert("你还没有添加任何2FA认证码");
-        return;
-      }
-
-      // 收集所有数据
-      const exportData: ExportDataItem[] = [];
-      for (const id of ids) {
-        const value = await getSecret(id);
-        if (value) {
-          exportData.push({
-            id: id as string,
-            secret: value.secret,
-            title: value.title,
-            description: value.description,
-            order: value.order,
-          });
-        }
-      }
-      // 计算导出数据的内存大小,用buffer
-      const size = Buffer.from(JSON.stringify(exportData)).length;
-      console.log("导出数据的大小:", size / 1024, "KB");
+      const exportData = await exportAllDataJson(true);
       // 生成QR码
       const dataUrl = await generateExportQRCode(exportData);
       setExportDataUrl(dataUrl);

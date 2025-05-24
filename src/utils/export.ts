@@ -1,12 +1,5 @@
-import { saveSecret } from "./idb";
+import { getAllSecrets, getSecret, saveSecret } from "./idb";
 import { generateQRCodeDataURL } from "./qr";
-
-interface ExportDataItem {
-  id: string;
-  secret: string;
-  title: string;
-  description?: string;
-}
 
 /**
  * 将数据转换为Base64编码的JSON字符串
@@ -126,3 +119,52 @@ export const dndConfig = () => {
     },
   };
 };
+
+/**
+ * 生成 WebRTC peerId 的二维码
+ * @param peerId RTC连接ID
+ * @returns Promise包含二维码的dataURL
+ */
+export async function generatePeerIdQRCode(peerId: string): Promise<string> {
+  try {
+    return await generateQRCodeDataURL(`rtc://${peerId}`);
+  } catch (error) {
+    console.error("生成peerId二维码失败:", error);
+    throw error;
+  }
+}
+
+/**
+ * 导出所有数据Json
+ * @param isSource 是否返回源数据
+ * @returns 当isSource为true时返回ExportDataItem[]，否则返回string
+ */
+export async function exportAllDataJson(
+  isSource: true
+): Promise<ExportDataItem[]>;
+export async function exportAllDataJson(isSource: false): Promise<string>;
+export async function exportAllDataJson(
+  isSource: boolean
+): Promise<string | ExportDataItem[]> {
+  const ids = await getAllSecrets();
+
+  // 收集所有数据
+  const exportData: ExportDataItem[] = [];
+  for (const id of ids) {
+    const value = await getSecret(id);
+    if (value) {
+      exportData.push({
+        id: id as string,
+        secret: value.secret,
+        title: value.title,
+        description: value.description,
+        order: value.order,
+      });
+    }
+  }
+  const jsonString = JSON.stringify(exportData);
+  // 计算导出数据的内存大小,用buffer
+  const size = Buffer.from(jsonString).length;
+  console.log("导出数据的大小:", size / 1024, "KB");
+  return isSource ? exportData : jsonString;
+}

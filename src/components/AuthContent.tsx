@@ -1,4 +1,5 @@
 "use client";
+import { useDialogState } from "@/store/StateProvider";
 import HeaderFallback from "@/ui/headerFallback";
 import Loader from "@/ui/loader";
 import { dndConfig, importData, parseBase64Data } from "@/utils/export";
@@ -32,12 +33,13 @@ const AddCodeDialog = _Lazy(() => import("./AddCodeDialog"));
 const ScanDialog = _Lazy(() => import("./ScanDialog"));
 const SortableAuthCode = _Lazy(() => import("./SortableAuthCode"));
 const ExportDialog = _Lazy(() => import("./ExportDialog"));
+const WebRtcDialog = _Lazy(() => import("./WebRtcDialog"));
 
 export function AuthContent() {
   const [codes, setCodes] = useState<AuthItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [showScanDialog, setShowScanDialog] = useState(false);
+  const { state, setState } = useDialogState();
+  const { showScanDialog, showAddCodeDialog } = state;
   const timeRemaining = useTimeRemaining();
 
   const sensors = useSensors(
@@ -99,6 +101,10 @@ export function AuthContent() {
         });
 
         alert("成功添加新的2FA认证码");
+      } else if (result.startsWith("rtc://")) {
+        // 处理WebRTC连接二维码
+        const peerId = result.slice(6);
+        setState({ remotePeerId: peerId });
       } else {
         // 尝试解析为备份数据(Base64编码的JSON)
         try {
@@ -138,7 +144,7 @@ export function AuthContent() {
         }
       }
 
-      setShowScanDialog(false);
+      setState({ showScanDialog: false });
     } catch (error) {
       console.error("Failed to parse QR code:", error);
       alert(
@@ -256,8 +262,8 @@ export function AuthContent() {
     <Fragment>
       <HeaderLazy
         codes={codes}
-        onShowAddDialog={() => setShowAddDialog(true)}
-        onShowScanDialog={() => setShowScanDialog(true)}
+        onShowAddDialog={() => setState({ showAddCodeDialog: true })}
+        onShowScanDialog={() => setState({ showScanDialog: true })}
       />
 
       <main className="flex-1 overflow-x-hidden pt-[72px] pb-4 px-4 will-change-scroll">
@@ -277,14 +283,14 @@ export function AuthContent() {
                 <div className="mt-4 flex flex-col sm:flex-row gap-2">
                   <button
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
-                    onClick={() => setShowAddDialog(true)}
+                    onClick={() => setState({ showAddCodeDialog: true })}
                   >
                     <PlusCircle className="w-4 h-4" />
                     手动添加
                   </button>
                   <button
                     className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center gap-1"
-                    onClick={() => setShowScanDialog(true)}
+                    onClick={() => setState({ showScanDialog: true })}
                   >
                     <ScanLine className="w-4 h-4" />
                     扫码添加
@@ -329,16 +335,18 @@ export function AuthContent() {
       <ExportDialog />
 
       <AddCodeDialog
-        isOpen={showAddDialog}
-        onClose={() => setShowAddDialog(false)}
+        isOpen={showAddCodeDialog}
+        onClose={() => setState({ showAddCodeDialog: false })}
         onAdd={handleAdd}
       />
 
       <ScanDialog
         isOpen={showScanDialog}
-        onClose={() => setShowScanDialog(false)}
+        onClose={() => setState({ showScanDialog: false })}
         onScan={handleScanResult}
       />
+
+      <WebRtcDialog />
     </Fragment>
   );
 }

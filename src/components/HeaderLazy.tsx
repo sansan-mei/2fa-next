@@ -15,7 +15,9 @@ export function HeaderLazy({
   onShowScanDialog,
 }: HeaderLazyProps) {
   const [showAddDropdown, setShowAddDropdown] = useState(false);
+  const [showExportDropdown, setShowExportDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const exportDropdownRef = useRef<HTMLDivElement>(null);
   const { setState } = useDialogState();
 
   // 点击外部时关闭下拉菜单
@@ -26,6 +28,12 @@ export function HeaderLazy({
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setShowAddDropdown(false);
+      }
+      if (
+        exportDropdownRef.current &&
+        !exportDropdownRef.current.contains(event.target as Node)
+      ) {
+        setShowExportDropdown(false);
       }
     }
 
@@ -43,12 +51,39 @@ export function HeaderLazy({
         </h1>
         <div className="flex items-center gap-1">
           {codes.length > 0 && (
-            <button
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-              onClick={() => setState({ showExportQRCode: true })}
-            >
-              <QrCode className="w-6 h-6 text-gray-900" />
-            </button>
+            <div className="relative" ref={exportDropdownRef}>
+              <button
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+              >
+                <QrCode className="w-6 h-6 text-gray-900" />
+              </button>
+
+              {showExportDropdown && (
+                <div className="absolute right-0 mt-1 w-38 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
+                  <button
+                    onClick={() => {
+                      setShowExportDropdown(false);
+                      setState({ showExportQRCode: true });
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <QrCode className="w-4 h-4" />
+                    二维码导出
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowExportDropdown(false);
+                      setState({ showWebRtcQRCode: true });
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <ScanLine className="w-4 h-4" />
+                    安全网络导出
+                  </button>
+                </div>
+              )}
+            </div>
           )}
           <div className="relative" ref={dropdownRef}>
             <button
@@ -59,7 +94,7 @@ export function HeaderLazy({
             </button>
 
             {showAddDropdown && (
-              <div className="absolute right-0 mt-1 w-48 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
+              <div className="absolute right-0 mt-1 w-38 bg-white rounded-md shadow-lg border border-gray-200 py-1 z-10">
                 <button
                   onClick={() => {
                     setShowAddDropdown(false);
