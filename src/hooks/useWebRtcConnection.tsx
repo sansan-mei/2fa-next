@@ -1,8 +1,33 @@
 import { generateSnowflake } from "@/utils/totp";
-import { DataConnection, Peer } from "peerjs";
+import { DataConnection, Peer, PeerError } from "peerjs";
 import { useEffect, useMemo, useState } from "react";
 
 export type Data = string | number | object | boolean;
+
+export type ConnectionStatus =
+  | "idle"
+  | "connecting"
+  | "connected"
+  | "error"
+  | "disconnected";
+
+type PeerErrorType =
+  | "not-open-yet"
+  | "message-too-big"
+  | "negotiation-failed"
+  | "connection-closed"
+  | "disconnected"
+  | "browser-incompatible"
+  | "invalid-id"
+  | "invalid-key"
+  | "network"
+  | "peer-unavailable"
+  | "ssl-unavailable"
+  | "server-error"
+  | "socket-error"
+  | "socket-closed"
+  | "unavailable-id"
+  | "webrtc";
 
 export function useWebRtcConnection() {
   const [connection, setConnection] = useState<DataConnection | null>(null);
@@ -11,10 +36,16 @@ export function useWebRtcConnection() {
   const [peer, setPeer] = useState<Peer | null>(null);
   const [data, setData] = useState<Data[]>([]);
   const [isInitiator, setIsInitiator] = useState<boolean | null>(null);
+  const [status, setStatus] = useState<ConnectionStatus>("idle");
+  const [error, setError] = useState<Error | PeerError<PeerErrorType> | null>(
+    null
+  );
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 3;
 
   const isConnected = useMemo(() => {
-    return !!connection?.open;
-  }, [connection]);
+    return status === "connected" && !!connection?.open;
+  }, [connection, status]);
 
   const addLog = (message: string) => {
     setLogs((prev) => [
@@ -31,6 +62,8 @@ export function useWebRtcConnection() {
       conn.on("open", () => {
         addLog("连接已建立");
         setConnection(conn);
+        setStatus("connected");
+        setError(null);
         resolve(conn);
       });
 
@@ -44,23 +77,41 @@ export function useWebRtcConnection() {
       conn.on("error", (err) => {
         addLog(`连接错误: ${err}`);
         setConnection(null);
+        setStatus("error");
+        setError(err);
         reject(err);
       });
 
       conn.on("close", () => {
         addLog("连接已关闭");
         setConnection(null);
+        setStatus("disconnected");
         resolve(null);
       });
     });
   };
 
   const connectToPeer = async (targetId: string) => {
-    if (!targetId || !peer) return;
-    const conn = peer.connect(targetId.replace(/-/g, ""));
-    setIsInitiator(true);
-    addLog(`尝试连接到 ${targetId}`);
-    return await setupConnectionEvents(conn);
+    if (!targetId || !peer) {
+      const err = new Error("无效的 peer ID 或 peer 未初始化");
+      addLog("连接失败: " + err.message);
+      setStatus("error");
+      setError(err);
+      return null;
+    }
+
+    try {
+      setStatus("connecting");
+      const conn = peer.connect(targetId.replace(/-/g, ""));
+      setIsInitiator(true);
+      addLog(`尝试连接到 ${targetId}`);
+      return await setupConnectionEvents(conn);
+    } catch (err) {
+      addLog(`连接失败: ${err}`);
+      setStatus("error");
+      setError(err as Error);
+      return null;
+    }
   };
 
   const sendData = (data: Data) => {
@@ -80,42 +131,88 @@ export function useWebRtcConnection() {
       return true;
     } catch (error) {
       addLog(`发送数据失败: ${error}`);
+      setError(error as Error);
       return false;
     }
   };
 
   const startCreatePeer = (): Promise<Peer> => {
     return new Promise((resolve, reject) => {
-      if (!peerId) return reject(new Error("peerId is not set"));
-      if (peer) return resolve(peer);
-      const _peer = new Peer(peerId);
-
-      _peer.on("open", (id) => {
-        addLog(`已连接到服务器，我的ID是: ${id}`);
-        setPeer(_peer);
-        resolve(_peer);
-      });
-
-      _peer.on("error", (err) => {
-        addLog(`Peer错误: ${err.message}`);
+      if (!peerId) {
+        const err = new Error("peerId is not set");
+        addLog("创建 peer 失败: " + err.message);
+        setError(err);
+        setStatus("error");
         reject(err);
-      });
+        return;
+      }
 
-      _peer.on("connection", (conn) => {
-        setIsInitiator(false);
-        addLog(`收到来自 ${conn.peer} 的连接`);
-        setupConnectionEvents(conn);
-      });
+      if (peer) {
+        resolve(peer);
+        return;
+      }
+
+      try {
+        const _peer = new Peer(peerId);
+
+        _peer.on("open", (id) => {
+          addLog(`已连接到服务器，我的ID是: ${id}`);
+          setPeer(_peer);
+          setStatus("idle");
+          resolve(_peer);
+        });
+
+        _peer.on("error", (err) => {
+          addLog(`Peer错误: ${err.message}`);
+          setStatus("error");
+          setError(err);
+          reject(err);
+        });
+
+        _peer.on("connection", (conn) => {
+          setIsInitiator(false);
+          addLog(`收到来自 ${conn.peer} 的连接`);
+          setupConnectionEvents(conn);
+        });
+      } catch (err) {
+        addLog(`创建 peer 失败: ${err}`);
+        setStatus("error");
+        setError(err as Error);
+        reject(err);
+      }
     });
   };
 
   const reset = () => {
-    setPeerId("");
     addLog("清理连接");
     peer?.destroy?.();
     connection?.close?.();
+    setPeer(null);
     setConnection(null);
+    setStatus("idle");
+    setError(null);
+    setRetryCount(0);
     return Promise.resolve(true);
+  };
+
+  const retry = async () => {
+    if (retryCount >= MAX_RETRIES) {
+      addLog("达到最大重试次数");
+      return false;
+    }
+
+    setRetryCount((prev) => prev + 1);
+    addLog(`尝试重连 (${retryCount + 1}/${MAX_RETRIES})`);
+
+    try {
+      await reset();
+      await startCreatePeer();
+      return true;
+    } catch (err) {
+      addLog(`重连失败: ${err}`);
+      setError(err as Error);
+      return false;
+    }
   };
 
   useEffect(() => {
@@ -138,5 +235,8 @@ export function useWebRtcConnection() {
     startCreatePeer,
     isInitiator,
     reset,
+    status,
+    error,
+    retry,
   };
 }
