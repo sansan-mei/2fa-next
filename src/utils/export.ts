@@ -108,6 +108,49 @@ export const handleDownloadQRCode = (exportDataUrl: string | null) => {
   document.body.removeChild(link);
 };
 
+/**
+ * 直接导出JSON配置文件
+ */
+export async function downloadConfigJSON(): Promise<void> {
+  try {
+    const jsonString = await exportAllDataJson(false);
+
+    // 添加UTF-8 BOM头以防止中文乱码
+    const BOM = "\uFEFF";
+    const content = BOM + jsonString;
+
+    // 创建Blob对象，明确指定UTF-8编码
+    const blob = new Blob([content], {
+      type: "application/json;charset=utf-8",
+    });
+
+    // 创建下载链接
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+
+    // 生成文件名（包含时间戳）
+    const timestamp = new Date()
+      .toISOString()
+      .replace(/[:.]/g, "-")
+      .slice(0, 19);
+    link.download = `2fa-config-${timestamp}.json`;
+
+    // 触发下载
+    document.body.appendChild(link);
+    link.click();
+
+    // 清理
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    console.log("JSON配置文件导出成功");
+  } catch (error) {
+    console.error("导出JSON配置文件失败:", error);
+    throw error;
+  }
+}
+
 // 导出dnd-kit的配置
 export const dndConfig = () => {
   return {
@@ -167,4 +210,112 @@ export async function exportAllDataJson(
   const size = Buffer.from(jsonString).length;
   console.log("导出数据的大小:", size / 1024, "KB");
   return isSource ? exportData : jsonString;
+}
+
+/**
+ * 处理配置文件导入
+ * @param jsonContent 解析后的JSON内容
+ * @returns Promise<{success: boolean, count: number, message: string}>
+ */
+export async function handleConfigImport(jsonContent: unknown): Promise<{
+  success: boolean;
+  count: number;
+  message: string;
+}> {
+  try {
+    // 验证数据格式
+    if (!Array.isArray(jsonContent)) {
+      throw new Error("配置文件格式错误：必须是数组格式");
+    }
+
+    // 验证每个项目的数据结构
+    const validatedData: ExportDataItem[] = [];
+    for (let i = 0; i < jsonContent.length; i++) {
+      const item = jsonContent[i];
+      if (!item || typeof item !== "object") {
+        throw new Error(`第${i + 1}项数据格式错误：不是有效对象`);
+      }
+
+      if (!item.id || typeof item.id !== "string") {
+        throw new Error(`第${i + 1}项缺少有效的id字段`);
+      }
+
+      if (!item.secret || typeof item.secret !== "string") {
+        throw new Error(`第${i + 1}项缺少有效的secret字段`);
+      }
+
+      if (!item.title || typeof item.title !== "string") {
+        throw new Error(`第${i + 1}项缺少有效的title字段`);
+      }
+
+      validatedData.push({
+        id: item.id,
+        secret: item.secret,
+        title: item.title,
+        description: item.description || "",
+        order: item.order || 0,
+      });
+    }
+
+    if (validatedData.length === 0) {
+      throw new Error("配置文件为空，没有有效数据");
+    }
+
+    // 导入数据
+    const importedCount = await importData(validatedData);
+
+    return {
+      success: true,
+      count: importedCount,
+      message: `成功导入 ${importedCount} 个配置项`,
+    };
+  } catch (error) {
+    console.error("配置导入失败:", error);
+    return {
+      success: false,
+      count: 0,
+      message: error instanceof Error ? error.message : "导入失败",
+    };
+  }
+}
+
+/**
+ * 处理文件读取和导入
+ * @param file 选择的文件
+ * @param onSuccess 成功回调
+ * @param onError 错误回调
+ */
+export function handleFileImport(
+  file: File,
+  onSuccess: (result: { count: number; message: string }) => void,
+  onError: (message: string) => void
+): void {
+  if (!file.type.includes("json") && !file.name.endsWith(".json")) {
+    onError("请选择JSON格式的配置文件");
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    try {
+      const jsonContent = JSON.parse(e.target?.result as string);
+      const result = await handleConfigImport(jsonContent);
+
+      if (result.success) {
+        onSuccess({ count: result.count, message: result.message });
+      } else {
+        onError(result.message);
+      }
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "JSON解析失败，请检查文件格式";
+      onError(message);
+    }
+  };
+
+  reader.onerror = () => {
+    onError("文件读取失败");
+  };
+
+  reader.readAsText(file, "UTF-8");
 }

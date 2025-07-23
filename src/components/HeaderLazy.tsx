@@ -1,12 +1,21 @@
 "use client";
 import { useDialogState } from "@/store/StateProvider";
-import { Github, PlusCircle, QrCode, ScanLine } from "lucide-react";
+import { downloadConfigJSON, handleFileImport } from "@/utils/export";
+import {
+  FileText,
+  Github,
+  PlusCircle,
+  QrCode,
+  ScanLine,
+  Upload,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 interface HeaderLazyProps {
   codes: AuthItem[];
   onShowAddDialog: () => void;
   onShowScanDialog: () => void;
+  onConfigImported?: () => void; // 导入成功后的回调
 }
 
 export function HeaderLazy({
@@ -18,6 +27,7 @@ export function HeaderLazy({
   const [showExportDropdown, setShowExportDropdown] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const exportDropdownRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { setState } = useDialogState();
 
   // 点击外部时关闭下拉菜单
@@ -42,6 +52,26 @@ export function HeaderLazy({
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
+
+  // 处理文件选择
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    handleFileImport(
+      file,
+      (result) => {
+        alert(result.message);
+        window.location.reload();
+      },
+      (error) => {
+        alert(`导入失败: ${error}`);
+      }
+    );
+
+    // 清空input值，允许重复选择同一文件
+    event.target.value = "";
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 bg-gray-50 z-10 px-4 py-4 border-b border-gray-200">
@@ -81,6 +111,21 @@ export function HeaderLazy({
                     <ScanLine className="w-4 h-4" />
                     安全网络导出
                   </button>
+                  <button
+                    onClick={async () => {
+                      setShowExportDropdown(false);
+                      try {
+                        await downloadConfigJSON();
+                      } catch (error) {
+                        console.error("JSON导出失败:", error);
+                        alert("导出失败，请重试");
+                      }
+                    }}
+                    className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                  >
+                    <FileText className="w-4 h-4" />
+                    配置文件导出
+                  </button>
                 </div>
               )}
             </div>
@@ -117,6 +162,16 @@ export function HeaderLazy({
                 </button>
                 <button
                   onClick={() => {
+                    setShowAddDropdown(false);
+                    fileInputRef.current?.click();
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                >
+                  <Upload className="w-4 h-4" />
+                  导入配置
+                </button>
+                <button
+                  onClick={() => {
                     window.open(
                       "https://github.com/sansan-mei/2fa-next",
                       "_blank"
@@ -132,6 +187,14 @@ export function HeaderLazy({
           </div>
         </div>
       </div>
+      {/* 隐藏的文件输入框 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".json,application/json"
+        onChange={handleFileSelect}
+        style={{ display: "none" }}
+      />
     </header>
   );
 }
