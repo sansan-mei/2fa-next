@@ -4,7 +4,7 @@ import HeaderFallback from "@/ui/headerFallback";
 import Loader from "@/ui/loader";
 import { dndConfig, importData, parseBase64Data } from "@/utils/export";
 import { deleteSecret, getSecret, saveSecret } from "@/utils/idb";
-import { parseTOTPQRCode } from "@/utils/qr";
+import { parseTOTPQRCode } from "@/utils/otp-uri";
 import {
   generateSnowflake,
   generateTOTPCode,

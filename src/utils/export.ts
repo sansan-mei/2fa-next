@@ -1,6 +1,5 @@
 import { validateImportData } from "./import-validation";
 import { getAllSecrets, getSecret, importSecrets } from "./idb";
-import { generateQRCodeDataURL } from "./qr";
 
 /**
  * 将数据转换为Base64编码的JSON字符串
@@ -60,6 +59,7 @@ export async function generateExportQRCode(
 ): Promise<string> {
   try {
     const base64String = dataToBase64(data);
+    const { generateQRCodeDataURL } = await import("./qr");
     return await generateQRCodeDataURL(base64String);
   } catch (error) {
     console.error("生成导出二维码失败:", error);
@@ -150,6 +150,7 @@ export const dndConfig = () => {
  */
 export async function generatePeerIdQRCode(peerId: string): Promise<string> {
   try {
+    const { generateQRCodeDataURL } = await import("./qr");
     return await generateQRCodeDataURL(`rtc://${peerId}`);
   } catch (error) {
     console.error("生成peerId二维码失败:", error);
