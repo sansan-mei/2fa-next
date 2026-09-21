@@ -163,15 +163,15 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
         </div>
       </div>
 
-      <ConfirmDialog
+      {showDeleteDialog && <ConfirmDialog
         isOpen={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
         onConfirm={onDelete || (() => {})}
         title="删除认证代码"
         description={`确定要删除 ${issuer} (${name}) 的认证代码吗？此操作无法撤销。`}
-      />
+      />}
 
-      <EditDialog
+      {showEditDialog && <EditDialog
         isOpen={showEditDialog}
         onClose={() => setShowEditDialog(false)}
         onConfirm={(newName, newIssuer) => {
@@ -180,7 +180,7 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
         }}
         initialName={name}
         initialIssuer={issuer}
-      />
+      />}
     </div>
   );
 }

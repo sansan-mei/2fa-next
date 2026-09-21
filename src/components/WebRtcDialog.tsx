@@ -49,14 +49,14 @@ const WebRtcDialog = () => {
       startCreatePeer();
       generateQRCode();
     }
-  }, [state.showWebRtcQRCode]);
+  }, [state.showWebRtcQRCode, peerId]);
 
   // 发起方处理 peer 创建
   useEffect(() => {
-    if (remotePeerId) {
+    if (remotePeerId && peerId) {
       startCreatePeer();
     }
-  }, [remotePeerId]);
+  }, [remotePeerId, peerId]);
 
   // 发起方处理连接
   useEffect(() => {

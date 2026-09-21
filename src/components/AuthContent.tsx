@@ -27,6 +27,7 @@ import { PlusCircle, ScanLine } from "lucide-react";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTimeRemaining } from "../store/TimeProvider";
 import _Lazy from "./_lazy";
+import DeferredMount from "./DeferredMount";
 import { watchTOTPCycle } from "@/utils/totp-cycle";
 
 const HeaderLazy = _Lazy(() => import("./HeaderLazy"), <HeaderFallback />);
@@ -314,21 +315,29 @@ export function AuthContent() {
         </div>
       </main>
 
-      <ExportDialog />
+      <DeferredMount active={state.showExportQRCode}>
+        <ExportDialog />
+      </DeferredMount>
 
-      <AddCodeDialog
-        isOpen={showAddCodeDialog}
-        onClose={() => setState({ showAddCodeDialog: false })}
-        onAdd={handleAdd}
-      />
+      <DeferredMount active={showAddCodeDialog}>
+        <AddCodeDialog
+          isOpen={showAddCodeDialog}
+          onClose={() => setState({ showAddCodeDialog: false })}
+          onAdd={handleAdd}
+        />
+      </DeferredMount>
 
-      <ScanDialog
-        isOpen={showScanDialog}
-        onClose={() => setState({ showScanDialog: false })}
-        onScan={handleScanResult}
-      />
+      <DeferredMount active={showScanDialog}>
+        <ScanDialog
+          isOpen={showScanDialog}
+          onClose={() => setState({ showScanDialog: false })}
+          onScan={handleScanResult}
+        />
+      </DeferredMount>
 
-      <WebRtcDialog />
+      <DeferredMount active={state.showWebRtcQRCode || !!state.remotePeerId}>
+        <WebRtcDialog />
+      </DeferredMount>
     </Fragment>
   );
 }
