@@ -11,7 +11,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import _Lazy from "./_lazy";
 
 const ConfirmDialog = _Lazy(() => import("./ConfirmDialog"));
@@ -50,15 +50,6 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [show, setShow] = useState(false);
-
-  useEffect(() => {
-    // 使用 requestAnimationFrame 确保在下一帧渲染动画
-    requestAnimationFrame(() => {
-      setShow(true);
-    });
-  }, []);
-
   const handleCopy = async () => {
     const success = await copyToClipboard(code.replace(/\s/g, ""));
     if (success) {
@@ -70,9 +61,7 @@ function SortableAuthCode(props: SortableAuthCodeProps) {
   return (
     <div ref={setNodeRef} style={style}>
       <div
-        className={`group relative p-4 bg-white rounded-lg border border-gray-200 transition-all duration-500 ease-out hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-300 ${
-          show ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-        }`}
+        className="group relative p-4 bg-white rounded-lg border border-gray-200 transition-[box-shadow,border-color] duration-500 ease-out hover:shadow-[0_0_15px_rgba(59,130,246,0.15)] hover:border-blue-300"
         onMouseLeave={() => setShowMenu(false)}
       >
         <div className="absolute inset-0 bg-gradient-to-tr from-blue-50/30 to-indigo-50/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-in-out rounded-lg pointer-events-none" />
