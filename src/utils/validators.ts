@@ -8,21 +8,21 @@ export function validateTOTPKey(value: string): {
   error: string;
 } {
   // 移除空格
-  const cleanKey = value.replace(/\s/g, "").toUpperCase();
+  const cleanKey = formatTOTPKey(value);
 
   // Base32 字符集验证（A-Z 和 2-7）
-  if (!/^[A-Z2-7]*$/.test(cleanKey)) {
+  if (!/^[A-Z2-7]+$/.test(cleanKey)) {
     return {
       isValid: false,
       error: "密钥只能包含字母 A-Z 和数字 2-7",
     };
   }
 
-  // 长度验证（通常是 16、32 或 64 个字符）
-  if (cleanKey.length > 0 && ![16, 32, 64].includes(cleanKey.length)) {
+  // Base32 编码完整字节后，未填充长度只能有这些余数。
+  if (![0, 2, 4, 5, 7].includes(cleanKey.length % 8)) {
     return {
       isValid: false,
-      error: "密钥长度必须是 16、32 或 64 个字符",
+      error: "密钥不是有效的 Base32 编码长度",
     };
   }
 

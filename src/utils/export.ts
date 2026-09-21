@@ -1,4 +1,5 @@
-import { getAllSecrets, getSecret, saveSecret } from "./idb";
+import { validateImportData } from "./import-validation";
+import { getAllSecrets, getSecret, importSecrets } from "./idb";
 import { generateQRCodeDataURL } from "./qr";
 
 /**
@@ -42,13 +43,7 @@ export function parseBase64Data(base64String: string): ExportDataItem[] {
       }
     }
 
-    const data = JSON.parse(jsonString) as ExportDataItem[];
-
-    if (!Array.isArray(data)) {
-      throw new Error("无效的数据格式，不是数组");
-    }
-
-    return data;
+    return validateImportData(JSON.parse(jsonString));
   } catch (error) {
     console.error("Base64解析失败:", error);
     throw error;
@@ -77,23 +72,8 @@ export async function generateExportQRCode(
  * @param data 要导入的数据数组
  * @returns 成功导入的项目数量
  */
-export async function importData(data: ExportDataItem[]): Promise<number> {
-  let importedCount = 0;
-
-  for (const item of data) {
-    try {
-      await saveSecret(item.id, {
-        secret: item.secret,
-        title: item.title,
-        description: item.description,
-      });
-      importedCount++;
-    } catch (error) {
-      console.error("保存项目失败:", error, "项目:", item);
-    }
-  }
-
-  return importedCount;
+export async function importData(data: unknown): Promise<number> {
+  return importSecrets(validateImportData(data));
 }
 
 // 点击导出二维码时的处理函数
@@ -206,8 +186,8 @@ export async function exportAllDataJson(
     }
   }
   const jsonString = JSON.stringify(exportData);
-  // 计算导出数据的内存大小,用buffer
-  const size = Buffer.from(jsonString).length;
+  // 浏览器中计算 UTF-8 字节数
+  const size = new TextEncoder().encode(jsonString).length;
   console.log("导出数据的大小:", size / 1024, "KB");
   return isSource ? exportData : jsonString;
 }
@@ -223,46 +203,7 @@ export async function handleConfigImport(jsonContent: unknown): Promise<{
   message: string;
 }> {
   try {
-    // 验证数据格式
-    if (!Array.isArray(jsonContent)) {
-      throw new Error("配置文件格式错误：必须是数组格式");
-    }
-
-    // 验证每个项目的数据结构
-    const validatedData: ExportDataItem[] = [];
-    for (let i = 0; i < jsonContent.length; i++) {
-      const item = jsonContent[i];
-      if (!item || typeof item !== "object") {
-        throw new Error(`第${i + 1}项数据格式错误：不是有效对象`);
-      }
-
-      if (!item.id || typeof item.id !== "string") {
-        throw new Error(`第${i + 1}项缺少有效的id字段`);
-      }
-
-      if (!item.secret || typeof item.secret !== "string") {
-        throw new Error(`第${i + 1}项缺少有效的secret字段`);
-      }
-
-      if (!item.title || typeof item.title !== "string") {
-        throw new Error(`第${i + 1}项缺少有效的title字段`);
-      }
-
-      validatedData.push({
-        id: item.id,
-        secret: item.secret,
-        title: item.title,
-        description: item.description || "",
-        order: item.order || 0,
-      });
-    }
-
-    if (validatedData.length === 0) {
-      throw new Error("配置文件为空，没有有效数据");
-    }
-
-    // 导入数据
-    const importedCount = await importData(validatedData);
+    const importedCount = await importData(jsonContent);
 
     return {
       success: true,
@@ -298,7 +239,7 @@ export function handleFileImport(
   const reader = new FileReader();
   reader.onload = async (e) => {
     try {
-      const jsonContent = JSON.parse(e.target?.result as string);
+      const jsonContent = JSON.parse((e.target?.result as string).replace(/^\uFEFF/, ""));
       const result = await handleConfigImport(jsonContent);
 
       if (result.success) {

@@ -112,16 +112,6 @@ export function AuthContent() {
           // 解析备份数据
           const backupData = parseBase64Data(result);
 
-          // 检查数据格式
-          if (
-            backupData.length === 0 ||
-            !backupData[0].secret ||
-            !backupData[0].title
-          ) {
-            console.error("Empty or invalid backup format:", backupData);
-            throw new Error("无效或空的备份数据");
-          }
-
           // 确认导入
           if (
             window.confirm(`找到${backupData.length}个2FA认证码，是否导入？`)

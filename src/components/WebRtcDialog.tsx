@@ -1,8 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 import { Data, useWebRtcConnection } from "@/hooks/useWebRtcConnection";
 import { useDialogState } from "@/store/StateProvider";
-import { exportAllDataJson, generatePeerIdQRCode } from "@/utils/export";
-import { saveSecret } from "@/utils/idb";
+import { exportAllDataJson, generatePeerIdQRCode, importData } from "@/utils/export";
 import { Fragment, useEffect, useState } from "react";
 
 const WebRtcDialog = () => {
@@ -41,17 +40,7 @@ const WebRtcDialog = () => {
     const parsedData = data.map((item) =>
       typeof item === "string" ? JSON.parse(item) : item
     );
-    for (const [index, item] of parsedData.flat().entries()) {
-      const _item = item as ExportDataItem;
-      const idbValue: IDBValue = {
-        secret: _item.secret,
-        title: _item.title,
-        description: _item.description,
-        order: item.order || index + 1,
-      };
-      await saveSecret(_item.id, idbValue);
-    }
-    return Promise.resolve(true);
+    return importData(parsedData.flat());
   };
 
   /** 导出方，展开dialog的时候就创建peer */
@@ -93,6 +82,8 @@ const WebRtcDialog = () => {
       handleSave(data).then(async () => {
         await reset();
         window.location.reload();
+      }).catch((error: unknown) => {
+        alert(error instanceof Error ? error.message : "导入失败，未写入任何数据");
       });
     }
   }, [data, isInitiator]);

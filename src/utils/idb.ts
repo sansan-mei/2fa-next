@@ -47,3 +47,28 @@ export async function getAllSecrets() {
   const db = await dbPromise;
   return await db.getAllKeys(STORE_NAME);
 }
+
+/** Reject conflicts and commit the entire backup atomically. */
+export async function importSecrets(items: ExportDataItem[]): Promise<number> {
+  if (!dbPromise) throw new Error("当前环境无法访问本地数据库");
+  const db = await dbPromise;
+  const tx = db.transaction(STORE_NAME, "readwrite");
+  try {
+    const conflicts: string[] = [];
+    for (const item of items) {
+      if (await tx.store.get(item.id)) conflicts.push(item.title);
+    }
+    if (conflicts.length) {
+      throw new Error(`有 ${conflicts.length} 项与现有记录 ID 冲突（${conflicts.slice(0, 3).join("、")}），未导入任何数据，请先处理重复记录`);
+    }
+    for (const { id, ...value } of items) {
+      await tx.store.add(value, id);
+    }
+    await tx.done;
+    return items.length;
+  } catch (error) {
+    try { tx.abort(); } catch { /* The transaction may already be aborted. */ }
+    await tx.done.catch(() => {});
+    throw error;
+  }
+}
