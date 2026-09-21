@@ -39,6 +39,8 @@ const WebRtcDialog = _Lazy(() => import("./WebRtcDialog"));
 export function AuthContent() {
   const [codes, setCodes] = useState<AuthItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const { state, setState } = useDialogState();
   const { showScanDialog, showAddCodeDialog } = state;
   const timeRemaining = useTimeRemaining();
@@ -221,24 +223,30 @@ export function AuthContent() {
   };
 
   useEffect(() => {
-    // 初始化时获取codes
+    let cancelled = false;
     setLoading(true);
+    setLoadError(false);
 
     generateToTpCodeByIDB().then((updatedCodes) => {
-      setCodes(updatedCodes);
-      setLoading(false);
+      if (!cancelled) setCodes(updatedCodes);
+    }).catch((error: unknown) => {
+      console.error("读取认证数据失败:", error);
+      if (!cancelled) setLoadError(true);
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
     });
-  }, []);
+    return () => { cancelled = true; };
+  }, [loadAttempt]);
 
   // Countdown, cycle detection and TOTP generation share the same clock.
   useEffect(() => {
-    if (loading) return;
+    if (loading || loadError) return;
     const stop = watchTOTPCycle(() => { void updateToTpCodes(); });
     return () => {
       stop();
       refreshVersion.current++;
     };
-  }, [loading, updateToTpCodes]);
+  }, [loading, loadError, updateToTpCodes]);
 
   return (
     <Fragment>
@@ -252,6 +260,16 @@ export function AuthContent() {
         <div className="max-w-7xl mx-auto mt-1.5">
           {loading ? (
             <Loader />
+          ) : loadError ? (
+            <div role="alert" className="py-12 text-center">
+              <p className="text-gray-900">暂时无法读取本地认证数据，请重试。</p>
+              <button
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                onClick={() => { setLoading(true); setLoadAttempt((attempt) => attempt + 1); }}
+              >
+                重新加载
+              </button>
+            </div>
           ) : codes.length === 0 ? (
             <div className="md:min-h-[calc(100vh-20rem)] flex items-center">
               <div className="max-w-md mx-auto flex flex-col items-center justify-center py-12 px-4 border-2 border-dashed border-gray-300 rounded-lg animate-in fade-in duration-500">
