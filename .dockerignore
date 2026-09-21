@@ -1,0 +1,20 @@
+# Dependencies and build output must come from the Linux build stages.
+node_modules
+.next
+out
+build
+
+.git
+.codegraph
+.DS_Store
+.vscode
+.idea
+coverage
+tests
+*.tsbuildinfo
+*.log
+
+# Runtime configuration is provided separately (see docker-compose.yml).
+.env
+.env.*
+!.env.example

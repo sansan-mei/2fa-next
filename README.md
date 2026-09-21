@@ -1,5 +1,25 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Docker image
+
+The image uses a multi-stage build with Next.js standalone output and a Bun slim
+runtime. `.dockerignore` keeps local dependencies and build output out of the
+Linux build. Dependencies are installed using the committed lockfile.
+
+Server-side image optimization is disabled, and `sharp` / `@img` are excluded from
+the standalone output. Existing images, QR codes, and PWA assets are served
+directly. If server-side image resizing is added later, remove both the
+`images.unoptimized` setting and these tracing exclusions in `next.config.ts`.
+
+The runtime retains the non-root `appuser` user (UID 1001). Any mounted writable
+directories must allow that user to write. Environment files are not
+copied into the image; supply runtime configuration separately. Browser-visible
+`NEXT_PUBLIC_*` values, if introduced, must be supplied at build time explicitly.
+
+The `BUN_VERSION` build argument defaults to `1`; it can be pinned to a release
+with matching regular and slim image tags. Image size and PWA offline behavior
+must be verified after a production image is built.
+
 ## Getting Started
 
 First, run the development server:

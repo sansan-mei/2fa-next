@@ -10,6 +10,12 @@ const withSerwist = withSerwistInit({
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  // Images and QR codes are served directly; no server-side image resizing is used.
+  images: { unoptimized: true },
+  outputFileTracingExcludes: {
+    // Match both route traces and the next-server trace in Next.js 15.
+    "**": ["**/node_modules/sharp/**/*", "**/node_modules/@img/**/*"],
+  },
 };
 export default withSerwist(nextConfig);
 
