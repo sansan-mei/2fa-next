@@ -1,7 +1,7 @@
 import { getOTPTime } from "./otp-clock";
 import { Snowflake } from "@theinternetfolks/snowflake";
 import { TOTP } from "totp-generator";
-import { getAllSecrets, getSecret } from "./idb";
+import { getAllSecrets, getSecret, getSecretEntries } from "./idb";
 
 export function generateTOTPCode(key: string) {
   try {
@@ -14,20 +14,14 @@ export function generateTOTPCode(key: string) {
 }
 
 export async function generateToTpCodeByIDB(): Promise<AuthItem[]> {
-  const ids = await getAllSecrets();
-  const resultPromises = ids.map(async (id) => {
-    const value = await getSecret(id);
-    return {
-      id: id as string,
-      name: value!.title,
-      issuer: value!.description,
-      code: generateTOTPCode(value!.secret),
-      order: value!.order,
-    };
-  });
-  return Promise.all(resultPromises).then((result) =>
-    result.sort((a, b) => (a.order ?? 0) - (b.order ?? 0))
-  );
+  const entries = await getSecretEntries();
+  return entries.map(({ id, value }) => ({
+    id,
+    name: value.title,
+    issuer: value.description,
+    code: generateTOTPCode(value.secret),
+    order: value.order,
+  })).sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 }
 
 /**

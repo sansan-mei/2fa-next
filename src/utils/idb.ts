@@ -48,6 +48,19 @@ export async function getAllSecrets() {
   return await db.getAllKeys(STORE_NAME);
 }
 
+/** Read keys and values from one consistent snapshot, without per-item transactions. */
+export async function getSecretEntries(): Promise<{ id: string; value: IDBValue }[]> {
+  if (!dbPromise) return [];
+  const db = await dbPromise;
+  const tx = db.transaction(STORE_NAME, "readonly");
+  const [keys, values] = await Promise.all([
+    tx.store.getAllKeys(),
+    tx.store.getAll(),
+    tx.done,
+  ]);
+  return keys.map((key, index) => ({ id: String(key), value: values[index] }));
+}
+
 /** Reject conflicts and commit the entire backup atomically. */
 export async function importSecrets(items: ExportDataItem[]): Promise<number> {
   if (!dbPromise) throw new Error("当前环境无法访问本地数据库");
