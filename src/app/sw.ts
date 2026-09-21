@@ -16,9 +16,15 @@ declare const self: ServiceWorkerGlobalScope;
 
 const serwist = new Serwist({
   precacheEntries: self.__SW_MANIFEST,
+  precacheOptions: {
+    // Existing installations may still launch /?source=pwa. Keep RSC query
+    // parameters significant so HTML cannot satisfy an RSC request.
+    ignoreURLParametersMatching: [/^utm_/, /^fbclid$/, /^source$/],
+  },
   skipWaiting: true,
   clientsClaim: true,
-  navigationPreload: true,
+  // The home document is precached; don't start a redundant navigation fetch.
+  navigationPreload: false,
   runtimeCaching: [
     {
       matcher: ({ url }) => url.origin === self.location.origin && url.pathname === "/api/ntp",

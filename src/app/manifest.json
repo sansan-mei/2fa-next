@@ -21,7 +21,8 @@
       "purpose": "any"
     }
   ],
-  "start_url": "/?source=pwa",
+  "id": "/?source=pwa",
+  "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
   "scope": "/",
