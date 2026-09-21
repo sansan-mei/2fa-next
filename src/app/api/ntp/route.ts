@@ -1,7 +1,7 @@
 import { checkAndUpdateTimeOffset, getAdjustedTime } from "@/server-utils/ntp";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   // 检查并更新时间偏差
   await checkAndUpdateTimeOffset();
 
@@ -9,7 +9,10 @@ export async function GET() {
   const time = getAdjustedTime();
 
   // 创建响应
-  const response = NextResponse.json({ time: time.toISOString() });
+  const response = NextResponse.json({
+    time: time.toISOString(),
+    nonce: new URL(request.url).searchParams.get("nonce"),
+  });
 
   // 设置缓存控制头
   response.headers.set(

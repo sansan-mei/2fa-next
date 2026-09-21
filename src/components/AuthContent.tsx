@@ -230,7 +230,7 @@ export function AuthContent() {
     });
   }, []);
 
-  // Use the same local clock as TOTP generation. Countdown calibration is separate.
+  // Countdown, cycle detection and TOTP generation share the same clock.
   useEffect(() => {
     if (loading) return;
     const stop = watchTOTPCycle(() => { void updateToTpCodes(); });

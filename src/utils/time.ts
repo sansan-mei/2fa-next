@@ -1,10 +1,12 @@
+import { getOTPTime } from "./otp-clock";
+
 /**
  * 计算当前时间到下一个30秒周期的剩余秒数
  * @param offset 时间偏移量(毫秒)
  * @returns 剩余秒数(0-30)
  */
 export function getTimeRemainingToNextCycle(offset: number = 0): number {
-  const now = new Date(Date.now() + offset);
+  const now = new Date(getOTPTime() + offset);
   const seconds = now.getSeconds();
   const remaining = 30 - (seconds % 30);
   return remaining;

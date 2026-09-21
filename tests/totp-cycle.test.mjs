@@ -1,3 +1,4 @@
+import './register-typescript.mjs';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 const { watchTOTPCycle } = await import('../src/utils/totp-cycle.ts');

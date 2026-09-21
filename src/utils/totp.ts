@@ -1,10 +1,11 @@
+import { getOTPTime } from "./otp-clock";
 import { Snowflake } from "@theinternetfolks/snowflake";
 import { TOTP } from "totp-generator";
 import { getAllSecrets, getSecret } from "./idb";
 
 export function generateTOTPCode(key: string) {
   try {
-    const { otp } = TOTP.generate(key);
+    const { otp } = TOTP.generate(key, { timestamp: getOTPTime() });
     return otp;
   } catch (error) {
     console.warn(error);
