@@ -24,9 +24,10 @@ import {
   verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { PlusCircle, ScanLine } from "lucide-react";
-import { Fragment, useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTimeRemaining } from "../store/TimeProvider";
 import _Lazy from "./_lazy";
+import { watchTOTPCycle } from "@/utils/totp-cycle";
 
 const HeaderLazy = _Lazy(() => import("./HeaderLazy"), <HeaderFallback />);
 const AddCodeDialog = _Lazy(() => import("./AddCodeDialog"));
@@ -155,33 +156,36 @@ export function AuthContent() {
     }
   };
 
-  // 更新 TOTP 码的函数
-  const updateToTpCodes = useCallback(async () => {
-    const updatedCodes = await Promise.all(
-      codes.map(async (v) => {
-        const value = await getSecret(v.id);
-        if (!value) {
-          return v;
-        }
-        const newCode = generateTOTPCode(value.secret);
-        // 如果新生成的 code 和当前显示的相同，则延迟更新
-        if (newCode === v.code) {
-          setTimeout(() => {
-            const delayedCode = generateTOTPCode(value.secret);
-            setCodes((prev) =>
-              prev.map((item) =>
-                item.id === v.id ? { ...item, code: delayedCode } : item
-              )
-            );
-          }, 1500); // 延迟 1.5 秒后更新
-        }
-        return { ...v, code: newCode };
-      })
-    );
-    if (updatedCodes.length > 0) {
-      setCodes(updatedCodes);
-    }
+  const codesRef = useRef(codes);
+  useEffect(() => {
+    codesRef.current = codes;
   }, [codes]);
+
+  // Only merge generated codes, so a pending read cannot undo edits or deletions.
+  const refreshVersion = useRef(0);
+  const updateToTpCodes = useCallback(async () => {
+    const version = ++refreshVersion.current;
+    try {
+      const entries = await Promise.all(codesRef.current.map(async ({ id }) => {
+        const value = await getSecret(id);
+        return [id, value ? generateTOTPCode(value.secret) : undefined] as const;
+      }));
+      if (version !== refreshVersion.current) return;
+      const updates = new Map(entries);
+      setCodes((current) => {
+        let changed = false;
+        const next = current.map((item) => {
+          const code = updates.get(item.id);
+          if (code === undefined || code === item.code) return item;
+          changed = true;
+          return { ...item, code };
+        });
+        return changed ? next : current;
+      });
+    } catch (error) {
+      console.error("刷新验证码失败:", error);
+    }
+  }, []);
 
   const handleEdit = async (id: string, newName: string, newIssuer: string) => {
     const lastCode = await getSecret(id);
@@ -236,27 +240,15 @@ export function AuthContent() {
     });
   }, []);
 
-  // 监听时间变化
+  // Use the same local clock as TOTP generation. Countdown calibration is separate.
   useEffect(() => {
-    if (timeRemaining === 30) {
-      updateToTpCodes();
-    }
-  }, [timeRemaining, updateToTpCodes]);
-
-  // 监听页面可见性变化
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible") {
-        // 页面重新可见时，立即更新一次 TOTP 码
-        updateToTpCodes();
-      }
-    };
-
-    document.addEventListener("visibilitychange", handleVisibilityChange);
+    if (loading) return;
+    const stop = watchTOTPCycle(() => { void updateToTpCodes(); });
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      stop();
+      refreshVersion.current++;
     };
-  }, [updateToTpCodes]);
+  }, [loading, updateToTpCodes]);
 
   return (
     <Fragment>
