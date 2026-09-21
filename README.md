@@ -1,56 +1,162 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 2FA Next · 古歌验证器
 
-## Docker image
+一个基于 Next.js 的双因素认证器，支持生成 TOTP 动态验证码、扫码添加账户、备份导入导出和设备间迁移。项目采用 PWA 形式，页面资源完成缓存后，可以在离线状态下打开并生成验证码。
 
-The image uses a multi-stage build with Next.js standalone output and a Bun slim
-runtime. `.dockerignore` keeps local dependencies and build output out of the
-Linux build. Dependencies are installed using the committed lockfile.
+账户信息保存在当前浏览器的 IndexedDB 中，无需注册应用账号。验证码在设备本地计算，不依赖服务端出码。
 
-Server-side image optimization is disabled, and `sharp` / `@img` are excluded from
-the standalone output. Existing images, QR codes, and PWA assets are served
-directly. If server-side image resizing is added later, remove both the
-`images.unoptimized` setting and these tracing exclusions in `next.config.ts`.
+## 功能
 
-The runtime retains the non-root `appuser` user (UID 1001). Any mounted writable
-directories must allow that user to write. Environment files are not
-copied into the image; supply runtime configuration separately. Browser-visible
-`NEXT_PUBLIC_*` values, if introduced, must be supplied at build time explicitly.
+- **账户管理**：手动输入密钥，编辑名称和描述，删除账户，拖拽调整顺序。
+- **扫码添加**：使用摄像头或上传二维码图片，识别 `otpauth://totp/` 链接。
+- **动态验证码**：展示验证码和剩余时间，支持一键复制，回到页面时自动刷新。
+- **本地备份**：导出 JSON 文件或备份二维码，再通过文件或扫码导入。
+- **设备迁移**：通过二维码建立 WebRTC 连接，将账户数据传到另一台设备。
+- **PWA 离线使用**：支持添加到主屏幕，已缓存的应用可以离线打开。
+- **后台校时**：联网时尝试校准时间，失败不阻塞页面和验证码生成。
 
-The `BUN_VERSION` build argument defaults to `1`; it can be pinned to a release
-with matching regular and slim image tags. Image size and PWA offline behavior
-must be verified after a production image is built.
+## 开始使用
 
-## Getting Started
+1. 打开部署后的站点，等待页面和离线资源加载完成。
+2. 点击添加按钮，选择手动输入、扫码或导入配置。
+3. 点击验证码旁的复制按钮，将验证码用于对应网站或应用。
+4. 根据浏览器提供的入口，选择“安装应用”或“添加到主屏幕”。
 
-First, run the development server:
+手机远程访问时应使用 HTTPS，以满足 PWA、摄像头等浏览器功能的安全上下文要求；本机开发可以使用 `localhost`。首次访问仍需要联网，未缓存的资源无法在断网时下载。
+
+## 离线与时间校准
+
+验证码、倒计时和周期刷新使用同一个时间源：
+
+- 打开应用后，立即使用设备本地时间，不等待网络请求。
+- 在线时后台请求 `/api/ntp`；检测到网络恢复时会再次尝试。
+- 校准成功后，验证码和倒计时同步使用校准时间。
+- 请求失败、超时或响应无效时，继续使用当前时间源。
+- 校准偏移只保留在本次页面运行期间；离线重新打开时使用设备本地时间。
+
+校时接口不使用 Service Worker 缓存，避免把旧响应当成当前时间。页面和静态资源继续使用 PWA 缓存。离线状态下，如果设备系统时间本身不准确，验证码仍可能无法通过验证。
+
+WebRTC 迁移需要建立设备连接，不属于保证可离线使用的功能。
+
+## 支持的验证码格式
+
+当前支持以下 TOTP 配置：
+
+| 参数 | 支持值 |
+| --- | --- |
+| 类型 | TOTP |
+| 算法 | SHA-1 |
+| 位数 | 6 位 |
+| 周期 | 30 秒 |
+| 密钥编码 | Base32 |
+
+二维码未指定算法、位数和周期时，使用上述默认值。HOTP 或其他参数配置会明确提示不支持，不会忽略参数后继续添加。
+
+## 备份、导入与数据存储
+
+JSON 文件、备份二维码和 WebRTC 接收的数据使用统一导入校验。导入采用整批事务：数据有效且全部写入成功后才算完成，排序字段会保留。
+
+以下情况会拒绝整批导入，不覆盖现有记录：
+
+- 备份中存在重复 ID，或与浏览器已有账户的 ID 冲突。
+- 任意一项缺少有效的 ID、标题或密钥。
+- 描述、排序字段格式错误，或显式指定了不支持的 OTP 参数。
+
+导出的 JSON 和备份二维码包含密钥；二维码使用 Base64 编码，并非加密备份。请将备份保存在可信的位置。
+
+账户数据属于当前浏览器和站点，不保存在 Docker 容器中。更换浏览器或站点域名，不会自动迁移原有账户；清除站点数据可能删除账户。建议在迁移或清理浏览器数据前导出备份。
+
+## 本地开发
+
+项目使用 Bun 管理依赖，依赖版本由 `bun.lock` 锁定。
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+bun install --frozen-lockfile
+bun run dev:node
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+随后访问 [http://localhost:3000](http://localhost:3000)。`dev:node` 使用 Next.js 默认开发模式；项目也保留了 `bun run dev`（Turbopack）入口。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+本地生产构建与启动：
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+bun run build
+bun run start
+```
 
-## Learn More
+PWA 离线行为应在生产部署中验证，包括首次缓存完成后的断网冷启动、后台恢复和版本更新。
 
-To learn more about Next.js, take a look at the following resources:
+## Docker 部署
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+仓库提供 `Dockerfile` 和 `docker-compose.yml`，默认服务端口为 `3000`，Compose 中指定的目标平台为 `linux/amd64`。
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+使用发布的镜像：
 
-## Deploy on Vercel
+```bash
+docker run -d \
+  --name 2fa-app \
+  --restart unless-stopped \
+  -p 3000:3000 \
+  1596944197/2fa-app:latest
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+从当前源码构建并启动：
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+docker compose build 2fa-app
+docker compose up -d 2fa-app
+```
+
+当前 Compose 配置挂载了 `.env` 到 `/app/.env`。使用前应准备该文件；不需要配置文件时，可以移除这条挂载。不要把容器挂载当作浏览器账户数据的备份。
+
+### 镜像体积优化
+
+- **多阶段构建**：构建依赖留在构建阶段，运行阶段只复制 standalone 输出、静态资源和 `public`。
+- **Bun slim**：运行阶段使用精简基础镜像。
+- **隔离本机文件**：`.dockerignore` 排除本机 `node_modules`、`.next`、Git 数据等，避免将 macOS 等平台依赖混入 Linux 镜像。
+- **移除图片处理依赖**：项目图片和二维码直接展示，不使用 Next.js 服务端图片缩放；因此关闭图片优化，并从 standalone 输出排除 `sharp` 和 `@img`。
+- **锁定安装结果**：构建阶段使用 `bun install --frozen-lockfile`。
+
+如果以后需要服务端图片缩放，应同时移除 `next.config.ts` 中的 `images.unoptimized` 配置和对应的依赖追踪排除规则。
+
+容器保留非 root 用户 `appuser`（UID/GID 均为 `1001`）。若挂载需要写入的目录，请配置相应权限。环境文件不会复制进镜像；如以后使用 `NEXT_PUBLIC_*` 变量，需要在构建时显式提供。
+
+`BUN_VERSION` 构建参数默认是 `1`，也可以指定同时提供普通版和 slim 标签的具体版本。最终镜像大小会随平台、基础镜像版本和依赖变化，应以实际构建结果为准。
+
+## 检查与测试
+
+以下命令不会启动开发服务或生成生产构建：
+
+```bash
+# 类型检查
+./node_modules/.bin/tsc --noEmit --incremental false
+
+# 代码检查
+./node_modules/.bin/eslint src next.config.ts
+
+# 轻量回归测试：使用支持 registerHooks 和直接运行 TypeScript 的 Node.js 24
+node --test tests/*.test.mjs
+```
+
+现有回归测试覆盖导入校验、二维码参数、验证码刷新周期，以及校时成功、失败和离线降级逻辑。它们不能替代手机浏览器、IndexedDB 写入和 Service Worker 更新流程的实际验证。
+
+## 技术栈与目录
+
+项目主要使用 Next.js 15、React 19、TypeScript、Tailwind CSS 4、Zustand、IndexedDB、Serwist、PeerJS 和 dnd-kit。
+
+```text
+src/
+├── app/           页面入口、校时 API、PWA 清单和 Service Worker
+├── components/    账户卡片、扫码、备份与设备迁移界面
+├── hooks/         交互与 WebRTC 连接逻辑
+├── server-utils/  服务端 NTP 等工具
+├── store/         界面状态与时间上下文
+├── types/         共享类型
+├── ui/            加载与占位组件
+└── utils/         验证码、本地存储、导入导出和时间工具
+tests/             轻量回归测试
+public/            图标等静态资源
+```
+
+## 许可证
+
+项目在 `package.json` 中声明使用 **GPL-3.0-only** 许可证。
