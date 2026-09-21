@@ -1,6 +1,5 @@
 "use client";
 import { useDialogState } from "@/store/StateProvider";
-import HeaderFallback from "@/ui/headerFallback";
 import Loader from "@/ui/loader";
 import { dndConfig, importData, parseBase64Data } from "@/utils/export";
 import { deleteSecret, getSecret, saveSecret } from "@/utils/idb";
@@ -28,12 +27,12 @@ import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 import { useTimeRemaining } from "../store/TimeProvider";
 import _Lazy from "./_lazy";
 import DeferredMount from "./DeferredMount";
+import HeaderLazy from "./HeaderLazy";
+import SortableAuthCode from "./SortableAuthCode";
 import { watchTOTPCycle } from "@/utils/totp-cycle";
 
-const HeaderLazy = _Lazy(() => import("./HeaderLazy"), <HeaderFallback />);
 const AddCodeDialog = _Lazy(() => import("./AddCodeDialog"));
 const ScanDialog = _Lazy(() => import("./ScanDialog"));
-const SortableAuthCode = _Lazy(() => import("./SortableAuthCode"));
 const ExportDialog = _Lazy(() => import("./ExportDialog"));
 const WebRtcDialog = _Lazy(() => import("./WebRtcDialog"));
 
