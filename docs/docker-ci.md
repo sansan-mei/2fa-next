@@ -33,7 +33,7 @@
 
 ## 锁文件兼容性
 
-首次托管 runner 构建发现 `oven/bun:1` 解析到 Bun 1.4.4 时，旧 `bun.lock` 缺少 `configVersion` 元数据，导致 `bun install --frozen-lockfile` 拒绝执行。在同一基础镜像中运行仅更新锁文件的诊断后，按其输出补齐 `configVersion: 0`，保留原有包版本、校验值和冻结安装要求；未在生产服务器安装依赖。以后更换 Bun 版本时仍需重新验证冻结安装与完整构建。
+首次托管 runner 构建发现 `oven/bun:1` 解析到 Bun 1.4.4 时，旧 `bun.lock` 与当前 Bun 的锁文件格式及依赖图不一致，导致 `bun install --frozen-lockfile` 拒绝执行。在同一基础镜像中运行 `bun install --lockfile-only --ignore-scripts` 诊断后，按其实际输出补齐 `configVersion: 0` 并移除 67 个旧的未引用条目；所有保留包的版本与校验值不变，没有新增或升级依赖，继续要求冻结安装。未在生产服务器安装依赖。以后更换 Bun 版本时仍需重新验证冻结安装与完整构建。
 
 ## 缓存、安全与排查
 
