@@ -40,14 +40,6 @@ jobs:
             echo 'Publishing disabled: only non-PR runs on the default branch with DOCKERHUB_TOKEN may push.'
           fi
 
-      - name: Diagnose frozen lockfile compatibility
-        run: |
-          diagnostic_dir="$RUNNER_TEMP/bun-lock-diagnostic"
-          mkdir -p "$diagnostic_dir"
-          cp package.json bun.lock "$diagnostic_dir/"
-          docker run --rm -v "$diagnostic_dir:/app" -w /app oven/bun:1 bun install --lockfile-only --ignore-scripts
-          diff -u bun.lock "$diagnostic_dir/bun.lock" || [ "$?" -eq 1 ]
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
 

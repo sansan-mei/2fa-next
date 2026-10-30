@@ -31,6 +31,10 @@
 
 本次功能分支验证不需要也不会创建或修改 Secret；在未合并且未提供凭据之前，不能声称已经验证真实 Docker Hub 推送。
 
+## 锁文件兼容性
+
+首次托管 runner 构建发现 `oven/bun:1` 解析到 Bun 1.4.4 时，旧 `bun.lock` 缺少 `configVersion` 元数据，导致 `bun install --frozen-lockfile` 拒绝执行。在同一基础镜像中运行仅更新锁文件的诊断后，按其输出补齐 `configVersion: 0`，保留原有包版本、校验值和冻结安装要求；未在生产服务器安装依赖。以后更换 Bun 版本时仍需重新验证冻结安装与完整构建。
+
 ## 缓存、安全与排查
 
 - 使用 Buildx 和 GitHub Actions `gha` 缓存，缓存范围为 `2fa-next-amd64`。PR 的缓存受到 GitHub 的分支访问限制，缓存未命中时会正常重新构建。
