@@ -1,0 +1,85 @@
+name: Docker build and publish
+
+on:
+  push:
+    branches: [master, ci/docker-publish]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  docker:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Decide whether publishing is allowed
+        id: publish
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+          IS_DEFAULT_BRANCH: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
+          IS_PULL_REQUEST: ${{ github.event_name == 'pull_request' }}
+        run: |
+          if [ -z "$DOCKERHUB_TOKEN" ]; then
+            echo '::warning::DOCKERHUB_TOKEN is not configured. Building only; no image will be pushed. Add a Docker Hub write token for 1596944197 in repository Actions secrets to enable publishing after merge.'
+          fi
+          if [ "$IS_DEFAULT_BRANCH" = 'true' ] && [ "$IS_PULL_REQUEST" != 'true' ] && [ -n "$DOCKERHUB_TOKEN" ]; then
+            echo 'push=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'push=false' >> "$GITHUB_OUTPUT"
+            echo 'Publishing disabled: only non-PR runs on the default branch with DOCKERHUB_TOKEN may push.'
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Log in to Docker Hub
+        if: steps.publish.outputs.push == 'true'
+        uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6 # v4.7.0
+        with:
+          username: '1596944197'
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Generate image tags
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: 1596944197/2fa-app
+          tags: |
+            type=raw,value=latest
+            type=sha,format=long
+
+      - name: Build image (push only when allowed)
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          push: ${{ steps.publish.outputs.push == 'true' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=2fa-next-amd64
+          cache-to: type=gha,mode=max,scope=2fa-next-amd64
+
+      - name: Summarize result
+        env:
+          PUSH_ENABLED: ${{ steps.publish.outputs.push }}
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          if [ "$PUSH_ENABLED" = 'true' ]; then
+            echo '## Docker build and push succeeded' >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo '## Docker build succeeded (no push)' >> "$GITHUB_STEP_SUMMARY"
+            echo 'Build-only verification; this run did not publish an image.' >> "$GITHUB_STEP_SUMMARY"
+          fi
+          printf '\nTarget platform: `linux/amd64`\n\nImage tags (published only when push is enabled):\n```text\n%s\n```\n' "$IMAGE_TAGS" >> "$GITHUB_STEP_SUMMARY"

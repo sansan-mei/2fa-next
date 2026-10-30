@@ -108,6 +108,12 @@ docker compose up -d 2fa-app
 
 当前 Compose 配置挂载了 `.env` 到 `/app/.env`。使用前应准备该文件；不需要配置文件时，可以移除这条挂载。不要把容器挂载当作浏览器账户数据的备份。
 
+### GitHub Actions 自动构建与发布
+
+仓库提供 [Docker CI 配置与凭据说明](docs/docker-ci.md)：`ci/docker-publish` 分支和面向 `master` 的 PR 只构建验证；默认分支运行且配置了仓库 Actions Secret `DOCKERHUB_TOKEN` 后，才会向 `1596944197/2fa-app` 发布 `latest` 和 `sha-<完整提交 SHA>`。Docker Hub 登录用户固定为 `1596944197`，Token 需具备写权限。
+
+未配置凭据时会明确警告，仍执行完整构建但不推送。先合并 PR、之后再配置凭据也可以；添加 Secret 后需手动在默认分支触发工作流或等待下一次推送。该流程不会自动部署或重启线上服务。
+
 ### 镜像体积优化
 
 - **多阶段构建**：构建依赖留在构建阶段，运行阶段只复制 standalone 输出、静态资源和 `public`。
