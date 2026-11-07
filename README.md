@@ -124,6 +124,29 @@ docker compose up -d 2fa-app
 
 如果以后需要服务端图片缩放，应同时移除 `next.config.ts` 中的 `images.unoptimized` 配置和对应的依赖追踪排除规则。
 
+### 监听地址与健康检查
+
+运行阶段设置 `HOSTNAME=0.0.0.0`、`PORT=3000`。Next.js standalone 服务按 `HOSTNAME` 绑定地址，而 Docker 默认把它设为容器 ID，此时服务只监听容器网卡 IP，容器内访问 `127.0.0.1:3000` 会被拒绝，健康检查也会失败。显式监听 `0.0.0.0` 后，宿主机端口映射行为不变。
+
+运行镜像不含 curl/wget，可用 Bun 做健康检查（检查首页能否返回 2xx；不调用会访问外部 NTP 的 `/api/ntp`）：
+
+```yaml
+    environment:
+      - HOSTNAME=0.0.0.0
+    healthcheck:
+      test: ["CMD", "bun", "-e", "const r = await fetch('http://127.0.0.1:3000/'); process.exit(r.ok ? 0 : 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+```
+
+Compose 中重复声明 `HOSTNAME=0.0.0.0`，可以让回滚到旧镜像时健康检查依然生效。健康检查只证明服务能返回首页，不能代替扫码、导入和 PWA 等功能验证。
+
+### 依赖版本
+
+Next.js 固定为 `15.5.29`（`eslint-config-next` 同版本），修复 15.4.x 中已公开的中间件绕过、缓存污染、拒绝服务等安全问题。本项目关闭了图片优化，也不使用 middleware 和 Server Actions，因此其中部分问题原本就触发不到。升级时只更新了锁文件中的 Next 相关条目，其他依赖未改动。
+
 容器保留非 root 用户 `appuser`（UID/GID 均为 `1001`）。若挂载需要写入的目录，请配置相应权限。环境文件不会复制进镜像；如以后使用 `NEXT_PUBLIC_*` 变量，需要在构建时显式提供。
 
 `BUN_VERSION` 构建参数默认是 `1`，也可以指定同时提供普通版和 slim 标签的具体版本。最终镜像大小会随平台、基础镜像版本和依赖变化，应以实际构建结果为准。
