@@ -18,7 +18,7 @@ RUN bun run build
 FROM oven/bun:${BUN_VERSION}-slim AS runner
 WORKDIR /app
 
-ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 
 RUN groupadd --system --gid 1001 appgroup && \
     useradd --system --uid 1001 --gid 1001 appuser
